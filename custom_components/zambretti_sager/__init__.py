@@ -1,25 +1,41 @@
 import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.components.lovelace import _register_panel
 
 from .const import DOMAIN
-from .lovelace import async_register_card
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[str] = ["sensor"]
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Настройка интеграции при старте Home Assistant."""
-    # Регистрируем кастомную карточку
-    await async_register_card(hass)
+    # Регистрируем ресурс для карточки
+    from pathlib import Path
+    card_path = Path(__file__).parent / "zambretti-barometer-card.js"
+    card_url = f"/zambretti_sager_card/zambretti-barometer-card.js"
+
+    hass.http.register_static_path(card_url, str(card_path), cache_headers=False)
+
+    # Добавляем ресурс в lovelace
+    if "lovelace" not in hass.data:
+        hass.data["lovelace"] = {"resources": []}
+
+    if "resources" not in hass.data["lovelace"]:
+        hass.data["lovelace"]["resources"] = []
+
+    hass.data["lovelace"]["resources"].append({
+        "url": card_url,
+        "type": "module"
+    })
+
+    _LOGGER.info("Zambretti Barometer Card registered at %s", card_url)
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Настройка интеграции при добавлении через интерфейс."""
     _LOGGER.info("Инициализация прогнозирования Zambretti & Sager для: %s", entry.title)
 
-    # ИСПРАВЛЕНИЕ: Правильный метод — add_update_listener
-    # Он регистрирует функцию, которая сработает при нажатии кнопки "Сохранить" в настройках
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
