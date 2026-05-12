@@ -4,7 +4,7 @@
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
-![Zambretti & Sager Logo](https://raw.githubusercontent.com/YOUR_USERNAME/zambretti_sager/main/logo.png)
+![Zambretti & Sager Logo](https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png)
 
 ## Features
 
@@ -22,7 +22,7 @@ A Home Assistant custom integration that provides weather forecasting using the 
 2. Go to "Integrations"
 3. Click the three dots in the top right corner
 4. Select "Custom repositories"
-5. Add this repository URL: `https://github.com/YOUR_USERNAME/zambretti_sager`
+5. Add this repository URL: `https://github.com/ziffmafiya/zambretti_sager`
 6. Select category "Integration"
 7. Click "Add"
 8. Find "Zambretti & Sager Weather Forecaster" in the list and install it
@@ -116,4 +116,4 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## Support
 
-If you encounter any issues or have suggestions, please [open an issue](https://github.com/YOUR_USERNAME/zambretti_sager/issues) on GitHub.
+If you encounter any issues or have suggestions, please [open an issue](https://github.com/ziffmafiya/zambretti_sager/issues) on GitHub.
