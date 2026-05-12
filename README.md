@@ -110,6 +110,41 @@ P_sea = P_abs / (1 - (0.0065 × altitude) / (T + 0.0065 × altitude + 273.15))^5
 - Check your Home Assistant has internet access
 - Altitude is fetched once at startup
 
+## Visualization
+
+### Zambretti Barometer Card
+
+A beautiful custom Lovelace card is available for visualizing your weather data:
+
+**Features:**
+- 🎨 Animated barometer gauge with gradient design
+- 📊 Pressure trend arrow (rising/falling/steady)
+- 🌈 Color-coded forecasts (green = good, red = storms)
+- 🌧️ Precipitation probability bar
+- 🎭 Animated weather icons
+
+**Installation:**
+
+1. Copy `www/zambretti-barometer-card.js` to your Home Assistant `www` folder
+2. Add to your Lovelace resources:
+
+```yaml
+resources:
+  - url: /local/zambretti-barometer-card.js
+    type: module
+```
+
+3. Add the card to your dashboard:
+
+```yaml
+type: custom:zambretti-barometer-card
+pressure_entity: sensor.your_pressure_sensor
+zambretti_entity: sensor.zambretti_forecast
+precipitation_entity: sensor.precipitation_probability
+```
+
+See [www/README.md](www/README.md) for detailed documentation.
+
 ## Credits
 
 - **Zambretti Algorithm**: Developed by Negretti and Zambra in the early 1900s
