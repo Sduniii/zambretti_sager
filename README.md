@@ -1,8 +1,13 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
+
+## 🎉 What's New in v1.3.0
+
+**The Zambretti Barometer Card is now built-in!** No more manual installation - the beautiful visualization card is automatically included with the integration.
 
 <img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png" alt="Zambretti & Sager Logo" width="400">
 
@@ -114,7 +119,7 @@ P_sea = P_abs / (1 - (0.0065 × altitude) / (T + 0.0065 × altitude + 273.15))^5
 
 ### Zambretti Barometer Card
 
-A beautiful custom Lovelace card is available for visualizing your weather data:
+A beautiful custom Lovelace card is **automatically included** with the integration:
 
 **Features:**
 - 🎨 Animated barometer gauge with gradient design
@@ -123,18 +128,14 @@ A beautiful custom Lovelace card is available for visualizing your weather data:
 - 🌧️ Precipitation probability bar
 - 🎭 Animated weather icons
 
-**Installation:**
+**Usage:**
 
-1. Copy `www/zambretti-barometer-card.js` to your Home Assistant `www` folder
-2. Add to your Lovelace resources:
+After installing the integration, the card is automatically registered. Simply add it to your dashboard:
 
-```yaml
-resources:
-  - url: /local/zambretti-barometer-card.js
-    type: module
-```
-
-3. Add the card to your dashboard:
+1. Edit your dashboard
+2. Click "Add Card"
+3. Search for "Zambretti Barometer Card"
+4. Configure the entities:
 
 ```yaml
 type: custom:zambretti-barometer-card
@@ -143,7 +144,7 @@ zambretti_entity: sensor.zambretti_forecast
 precipitation_entity: sensor.precipitation_probability
 ```
 
-See [www/README.md](www/README.md) for detailed documentation.
+**No manual installation required!** The card is bundled with the integration.
 
 ## Credits
 

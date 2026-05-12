@@ -3,9 +3,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .lovelace import async_register_card
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[str] = ["sensor"]
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Настройка интеграции при старте Home Assistant."""
+    # Регистрируем кастомную карточку
+    await async_register_card(hass)
+    return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Настройка интеграции при добавлении через интерфейс."""
