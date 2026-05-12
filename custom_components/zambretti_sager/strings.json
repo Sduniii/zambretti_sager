@@ -5,11 +5,18 @@
         "title": "Weather Station Setup",
         "description": "Select the sensors for your forecasting model.",
         "data": {
-          "pressure_sensor": "Pressure Sensor (absolute or sea level)",
+          "pressure_sensor": "Pressure Sensor",
           "wind_sensor": "Wind Direction Sensor",
-          "temperature_sensor": "Temperature Sensor (optional, for sea level correction)",
-          "use_sea_level_correction": "Enable sea level pressure correction",
-          "location": "Location (select on map for altitude calculation)"
+          "temperature_sensor": "Temperature Sensor (optional)",
+          "use_sea_level_correction": "Enable Sea Level Pressure Correction",
+          "location": "Location"
+        },
+        "data_description": {
+          "pressure_sensor": "Select your barometric pressure sensor (absolute or sea level pressure)",
+          "wind_sensor": "Select your wind direction sensor (in degrees)",
+          "temperature_sensor": "Optional: Used for accurate sea level pressure correction",
+          "use_sea_level_correction": "Enable if using absolute pressure sensor and located above sea level",
+          "location": "Click on the map to select your weather station location for altitude calculation"
         }
       }
     },
@@ -24,11 +31,18 @@
         "title": "Adjust Sensors",
         "description": "Update the sensors used for Zambretti and Sager calculations.",
         "data": {
-          "pressure_sensor": "Pressure Sensor (absolute or sea level)",
+          "pressure_sensor": "Pressure Sensor",
           "wind_sensor": "Wind Direction Sensor",
-          "temperature_sensor": "Temperature Sensor (optional, for sea level correction)",
-          "use_sea_level_correction": "Enable sea level pressure correction",
-          "location": "Location (select on map for altitude calculation)"
+          "temperature_sensor": "Temperature Sensor (optional)",
+          "use_sea_level_correction": "Enable Sea Level Pressure Correction",
+          "location": "Location"
+        },
+        "data_description": {
+          "pressure_sensor": "Select your barometric pressure sensor (absolute or sea level pressure)",
+          "wind_sensor": "Select your wind direction sensor (in degrees)",
+          "temperature_sensor": "Optional: Used for accurate sea level pressure correction",
+          "use_sea_level_correction": "Enable if using absolute pressure sensor and located above sea level",
+          "location": "Click on the map to select your weather station location for altitude calculation"
         }
       }
     }
