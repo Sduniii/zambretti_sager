@@ -43,156 +43,139 @@ class ZambrettiBarometerCard extends HTMLElement {
         .barometer-container {
           display: flex;
           flex-direction: column;
+          gap: 16px;
+          padding: 16px;
+        }
+        .top-section {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 16px;
           align-items: center;
-          gap: 20px;
         }
-        .barometer-gauge {
-          position: relative;
-          width: 250px;
-          height: 250px;
-        }
-        .barometer-circle {
-          width: 100%;
-          height: 100%;
+        .pressure-circle {
+          width: 120px;
+          height: 120px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-        .barometer-inner {
-          width: 85%;
-          height: 85%;
-          border-radius: 50%;
-          background: var(--card-background-color, #1c1c1c);
+          background: linear-gradient(135deg, ${color}40 0%, ${color}20 100%);
+          border: 3px solid ${color};
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
+          box-shadow: 0 4px 12px ${color}40;
         }
         .pressure-value {
-          font-size: 48px;
+          font-size: 32px;
           font-weight: bold;
           color: ${color};
-          text-shadow: 0 2px 10px ${color}80;
+          line-height: 1;
         }
         .pressure-unit {
-          font-size: 18px;
+          font-size: 12px;
           color: var(--secondary-text-color);
-          margin-top: -5px;
+          margin-top: 4px;
         }
-        .trend-arrow {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%) rotate(${this.getTrendRotation(trend)}deg);
-          width: 0;
-          height: 0;
-          border-left: 15px solid transparent;
-          border-right: 15px solid transparent;
-          border-bottom: 60px solid ${color};
-          filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
-          transition: transform 0.5s ease;
+        .forecast-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex: 1;
         }
-        .forecast-info {
-          text-align: center;
-          width: 100%;
+        .forecast-main {
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
         .weather-icon {
-          font-size: 64px;
-          margin: 10px 0;
-          animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+          font-size: 48px;
+          line-height: 1;
         }
         .forecast-text {
-          font-size: 24px;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--primary-text-color);
+          line-height: 1.3;
+        }
+        .trend-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: ${color}20;
+          border-radius: 16px;
+          font-size: 14px;
           font-weight: 600;
           color: ${color};
-          margin: 10px 0;
-          text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          border: 1px solid ${color}40;
+        }
+        .divider {
+          height: 1px;
+          background: var(--divider-color, rgba(255,255,255,0.1));
+          margin: 8px 0;
+        }
+        .precipitation-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .precipitation-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .precipitation-label {
+          font-size: 13px;
+          color: var(--secondary-text-color);
+          font-weight: 500;
+        }
+        .precipitation-percent {
+          font-size: 16px;
+          font-weight: bold;
+          color: ${precipitation > 50 ? color : 'var(--primary-text-color)'};
         }
         .precipitation-bar {
           width: 100%;
-          height: 30px;
-          background: var(--secondary-background-color);
-          border-radius: 15px;
+          height: 8px;
+          background: var(--secondary-background-color, rgba(255,255,255,0.1));
+          border-radius: 4px;
           overflow: hidden;
-          margin: 15px 0;
-          box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
         }
         .precipitation-fill {
           height: 100%;
-          background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+          background: linear-gradient(90deg, ${color} 0%, ${color}80 100%);
           width: ${precipitation}%;
           transition: width 0.5s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-        }
-        .trend-indicator {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          font-size: 18px;
-          color: var(--secondary-text-color);
-          margin-top: 10px;
-        }
-        .trend-text {
-          font-weight: 600;
-          color: ${color};
-        }
-        .pressure-scale {
-          display: flex;
-          justify-content: space-between;
-          width: 100%;
-          margin-top: 10px;
-          font-size: 12px;
-          color: var(--secondary-text-color);
+          border-radius: 4px;
         }
       </style>
 
       <div class="barometer-container">
-        <div class="barometer-gauge">
-          <div class="barometer-circle">
-            <div class="barometer-inner">
-              <div class="pressure-value">${pressure.toFixed(1)}</div>
-              <div class="pressure-unit">hPa</div>
+        <div class="top-section">
+          <div class="pressure-circle">
+            <div class="pressure-value">${pressure.toFixed(1)}</div>
+            <div class="pressure-unit">hPa</div>
+          </div>
+
+          <div class="forecast-section">
+            <div class="forecast-main">
+              <div class="weather-icon">${icon}</div>
+              <div class="forecast-text">${forecast}</div>
             </div>
-            <div class="trend-arrow"></div>
+            <div>
+              <span class="trend-badge">${this.getTrendText(trend)}</span>
+            </div>
           </div>
         </div>
 
-        <div class="forecast-info">
-          <div class="weather-icon">${icon}</div>
-          <div class="forecast-text">${forecast}</div>
+        <div class="divider"></div>
 
+        <div class="precipitation-section">
+          <div class="precipitation-header">
+            <span class="precipitation-label">Precipitation Probability</span>
+            <span class="precipitation-percent">${precipitation}%</span>
+          </div>
           <div class="precipitation-bar">
-            <div class="precipitation-fill">
-              ${precipitation > 10 ? precipitation + '%' : ''}
-            </div>
-          </div>
-          <div style="font-size: 14px; color: var(--secondary-text-color);">
-            Precipitation Probability: ${precipitation}%
-          </div>
-
-          <div class="trend-indicator">
-            <span>Trend:</span>
-            <span class="trend-text">${this.getTrendText(trend)}</span>
-          </div>
-
-          <div class="pressure-scale">
-            <span>Low<br/>980</span>
-            <span>Normal<br/>1013</span>
-            <span>High<br/>1040</span>
+            <div class="precipitation-fill"></div>
           </div>
         </div>
       </div>
