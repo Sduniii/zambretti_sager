@@ -4,7 +4,7 @@
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
-![Zambretti & Sager Logo](https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png)
+<img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png" alt="Zambretti & Sager Logo" width="400">
 
 ## Features
 
