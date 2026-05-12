@@ -130,12 +130,12 @@ A beautiful custom Lovelace card is **automatically included** with the integrat
 
 **Usage:**
 
-After installing the integration, the card is automatically registered. Simply add it to your dashboard:
+After installing the integration, add the card to your dashboard using YAML editor:
 
 1. Edit your dashboard
 2. Click "Add Card"
-3. Search for "Zambretti Barometer Card"
-4. Configure the entities:
+3. Choose "Manual" or click "Show Code Editor"
+4. Add this configuration:
 
 ```yaml
 type: custom:zambretti-barometer-card
@@ -143,6 +143,8 @@ pressure_entity: sensor.your_pressure_sensor
 zambretti_entity: sensor.zambretti_forecast
 precipitation_entity: sensor.precipitation_probability
 ```
+
+Replace the entity IDs with your actual sensor names.
 
 **No manual installation required!** The card is bundled with the integration.
 

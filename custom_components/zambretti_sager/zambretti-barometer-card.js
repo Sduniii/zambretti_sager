@@ -266,123 +266,9 @@ class ZambrettiBarometerCard extends HTMLElement {
   getCardSize() {
     return 5;
   }
-
-  static getConfigElement() {
-    return document.createElement('zambretti-barometer-card-editor');
-  }
-
-  static getStubConfig() {
-    return {
-      pressure_entity: '',
-      zambretti_entity: '',
-      precipitation_entity: ''
-    };
-  }
-}
-
-class ZambrettiBarometerCardEditor extends HTMLElement {
-  setConfig(config) {
-    this._config = { ...config };
-    this._render();
-  }
-
-  set hass(hass) {
-    this._hass = hass;
-    const pickers = this.querySelectorAll('ha-entity-picker');
-    pickers.forEach(picker => {
-      picker.hass = hass;
-    });
-  }
-
-  _render() {
-    if (this._rendered) return;
-    this._rendered = true;
-
-    this.innerHTML = `
-      <style>
-        .card-config {
-          padding: 16px;
-        }
-        .option {
-          margin-bottom: 16px;
-        }
-        .option label {
-          display: block;
-          margin-bottom: 4px;
-          font-weight: 500;
-        }
-      </style>
-      <div class="card-config">
-        <div class="option">
-          <label>Pressure Sensor</label>
-          <ha-entity-picker
-            id="pressure"
-            allow-custom-entity
-          ></ha-entity-picker>
-        </div>
-        <div class="option">
-          <label>Zambretti Forecast Sensor</label>
-          <ha-entity-picker
-            id="zambretti"
-            allow-custom-entity
-          ></ha-entity-picker>
-        </div>
-        <div class="option">
-          <label>Precipitation Probability Sensor (Optional)</label>
-          <ha-entity-picker
-            id="precipitation"
-            allow-custom-entity
-          ></ha-entity-picker>
-        </div>
-      </div>
-    `;
-
-    setTimeout(() => {
-      const pressurePicker = this.querySelector('#pressure');
-      const zambrettiPicker = this.querySelector('#zambretti');
-      const precipPicker = this.querySelector('#precipitation');
-
-      if (pressurePicker) {
-        pressurePicker.value = this._config.pressure_entity || '';
-        pressurePicker.hass = this._hass;
-        pressurePicker.addEventListener('value-changed', (ev) => {
-          this._config.pressure_entity = ev.detail.value;
-          this._fireEvent();
-        });
-      }
-
-      if (zambrettiPicker) {
-        zambrettiPicker.value = this._config.zambretti_entity || '';
-        zambrettiPicker.hass = this._hass;
-        zambrettiPicker.addEventListener('value-changed', (ev) => {
-          this._config.zambretti_entity = ev.detail.value;
-          this._fireEvent();
-        });
-      }
-
-      if (precipPicker) {
-        precipPicker.value = this._config.precipitation_entity || '';
-        precipPicker.hass = this._hass;
-        precipPicker.addEventListener('value-changed', (ev) => {
-          this._config.precipitation_entity = ev.detail.value;
-          this._fireEvent();
-        });
-      }
-    }, 100);
-  }
-
-  _fireEvent() {
-    const event = new CustomEvent('config-changed', {
-      detail: { config: this._config },
-      bubbles: true,
-      composed: true
-    });
-    this.dispatchEvent(event);
-  }
 }
 
 customElements.define('zambretti-barometer-card', ZambrettiBarometerCard);
-customElements.define('zambretti-barometer-card-editor', ZambrettiBarometerCardEditor);
 
 console.log('Zambretti Barometer Card: Registered');
 
@@ -394,6 +280,3 @@ window.customCards.push({
 });
 
 console.log('Zambretti Barometer Card: Added to customCards');
-
-// Уведомляем HA о новой карточке
-window.dispatchEvent(new Event('ll-rebuild'));
