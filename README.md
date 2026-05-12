@@ -10,6 +10,8 @@ A Home Assistant custom integration that provides weather forecasting using the 
 
 - **Zambretti Forecast**: 32 different weather predictions based on pressure trends over 3 hours
 - **Sager Forecast**: Simplified weather prediction based on current pressure and wind direction
+- **Extended Forecasts**: Predictions for 6, 12, and 24 hours ahead
+- **Precipitation Probability**: Percentage chance of rain based on pressure trends
 - **Sea Level Pressure Correction**: Automatic altitude-based pressure correction for accurate forecasts
 - **Interactive Map Selection**: Choose your location on a map for automatic altitude detection
 - **Temperature Compensation**: Uses temperature sensor for precise pressure correction
@@ -48,10 +50,14 @@ A Home Assistant custom integration that provides weather forecasting using the 
 
 ## Sensors
 
-The integration creates two sensors:
+The integration creates six sensors:
 
-- **Zambretti Forecast**: Detailed weather prediction (32 states)
+- **Zambretti Forecast**: Current detailed weather prediction (32 states)
 - **Sager Forecast**: Simplified weather prediction (3 states)
+- **Zambretti Forecast 6h**: Weather prediction for 6 hours ahead
+- **Zambretti Forecast 12h**: Weather prediction for 12 hours ahead
+- **Zambretti Forecast 24h**: Weather prediction for 24 hours ahead
+- **Precipitation Probability**: Chance of rain in percentage (0-100%)
 
 ## How It Works
 
