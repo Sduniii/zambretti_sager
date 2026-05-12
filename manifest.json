@@ -1,0 +1,11 @@
+{
+  "domain": "zambretti_sager",
+  "name": "Zambretti and Sager",
+  "version": "1.0.0",
+  "config_flow": true,
+  "documentation": "https://github.com/YOUR_USERNAME/zambretti_sager",
+  "issue_tracker": "https://github.com/YOUR_USERNAME/zambretti_sager/issues",
+  "codeowners": ["@Maksym"],
+  "iot_class": "local_polling",
+  "requirements": []
+}
