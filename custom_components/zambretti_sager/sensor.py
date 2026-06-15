@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.const import PERCENTAGE
 from homeassistant.helpers.entity import DeviceInfo
@@ -40,9 +42,14 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
         )
 
     @property
-    def _data(self) -> ForecastData | None:
-        """Текущие данные координатора."""
+    def data(self) -> ForecastData | None:
         return self.coordinator.data
+
+    @property
+    def available(self) -> bool:
+        """Доступен если координатор получил данные и они валидны."""
+        d = self.data
+        return d is not None and d.available
 
     @staticmethod
     def _zambretti_index(p_now: float, delta: float) -> int:
@@ -55,10 +62,6 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
             z = round(144 - 0.13 * p_now)
         return max(1, min(z, 32))
 
-    def _set_unavailable(self) -> None:
-        """Пометить сенсор недоступным."""
-        self._attr_available = False
-
 
 class ZambrettiSensor(WeatherSensorBase):
     """Текущий прогноз Замбретти на основе тренда за 3 часа."""
@@ -69,16 +72,13 @@ class ZambrettiSensor(WeatherSensorBase):
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti"
         self.entity_id = "sensor.zambretti_forecast"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
-            return
-        delta = data.p_now - data.p_3h
-        self._attr_available = True
-        self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(data.p_now, delta), "Stable"
-        )
+    @property
+    def native_value(self) -> str | None:
+        d = self.data
+        if not d or not d.available or d.p_now is None or d.p_3h is None:
+            return None
+        delta = d.p_now - d.p_3h
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(d.p_now, delta), "Stable")
 
 
 class SagerSensor(WeatherSensorBase):
@@ -90,16 +90,13 @@ class SagerSensor(WeatherSensorBase):
         self._attr_unique_id = f"{coordinator.entry.entry_id}_sager"
         self.entity_id = "sensor.sager_forecast"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
-            return
-        delta = data.p_now - data.p_3h
-        self._attr_available = True
-        self._attr_native_value = calculate_sager_forecast(
-            data.p_now, delta, data.wind_degrees
-        )
+    @property
+    def native_value(self) -> str | None:
+        d = self.data
+        if not d or not d.available or d.p_now is None or d.p_3h is None:
+            return None
+        delta = d.p_now - d.p_3h
+        return calculate_sager_forecast(d.p_now, delta, d.wind_degrees)
 
 
 class ZambrettiForecast6h(WeatherSensorBase):
@@ -112,17 +109,14 @@ class ZambrettiForecast6h(WeatherSensorBase):
         self._attr_icon = "mdi:weather-partly-cloudy"
         self.entity_id = "sensor.zambretti_forecast_6h"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
-            return
-        delta_6h = (data.p_now - data.p_3h) * 2
-        predicted = data.p_now + delta_6h
-        self._attr_available = True
-        self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(predicted, delta_6h), "Stable"
-        )
+    @property
+    def native_value(self) -> str | None:
+        d = self.data
+        if not d or not d.available or d.p_now is None or d.p_3h is None:
+            return None
+        delta_6h = (d.p_now - d.p_3h) * 2
+        predicted = d.p_now + delta_6h
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_6h), "Stable")
 
 
 class ZambrettiForecast12h(WeatherSensorBase):
@@ -135,17 +129,14 @@ class ZambrettiForecast12h(WeatherSensorBase):
         self._attr_icon = "mdi:weather-cloudy"
         self.entity_id = "sensor.zambretti_forecast_12h"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_6h is None:
-            self._set_unavailable()
-            return
-        delta_12h = (data.p_now - data.p_6h) * 2
-        predicted = data.p_now + delta_12h
-        self._attr_available = True
-        self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(predicted, delta_12h), "Stable"
-        )
+    @property
+    def native_value(self) -> str | None:
+        d = self.data
+        if not d or not d.available or d.p_now is None or d.p_6h is None:
+            return None
+        delta_12h = (d.p_now - d.p_6h) * 2
+        predicted = d.p_now + delta_12h
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_12h), "Stable")
 
 
 class ZambrettiForecast24h(WeatherSensorBase):
@@ -158,17 +149,14 @@ class ZambrettiForecast24h(WeatherSensorBase):
         self._attr_icon = "mdi:weather-sunset"
         self.entity_id = "sensor.zambretti_forecast_24h"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_12h is None:
-            self._set_unavailable()
-            return
-        delta_24h = (data.p_now - data.p_12h) * 2
-        predicted = data.p_now + delta_24h
-        self._attr_available = True
-        self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(predicted, delta_24h), "Stable"
-        )
+    @property
+    def native_value(self) -> str | None:
+        d = self.data
+        if not d or not d.available or d.p_now is None or d.p_12h is None:
+            return None
+        delta_24h = (d.p_now - d.p_12h) * 2
+        predicted = d.p_now + delta_24h
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_24h), "Stable")
 
 
 class PrecipitationProbability(WeatherSensorBase):
@@ -183,14 +171,14 @@ class PrecipitationProbability(WeatherSensorBase):
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self.entity_id = "sensor.precipitation_probability"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
-            return
+    @property
+    def native_value(self) -> int | None:
+        d = self.data
+        if not d or not d.available or d.p_now is None or d.p_3h is None:
+            return None
 
-        delta = data.p_now - data.p_3h
-        p_now = data.p_now
+        delta = d.p_now - d.p_3h
+        p_now = d.p_now
 
         if p_now < 1000:       base_prob = 90
         elif p_now < 1005:     base_prob = 70
@@ -205,5 +193,4 @@ class PrecipitationProbability(WeatherSensorBase):
         elif delta > 1.6:      trend_modifier = -15
         else:                  trend_modifier = 0
 
-        self._attr_available = True
-        self._attr_native_value = round(max(0, min(100, base_prob + trend_modifier)))
+        return round(max(0, min(100, base_prob + trend_modifier)))
