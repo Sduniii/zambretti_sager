@@ -7,7 +7,7 @@ import logging
 from homeassistant.const import UnitOfPressure
 from homeassistant.core import State
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.util.unit_conversion import AtmosphericPressureConverter
+from homeassistant.util.unit_conversion import PressureConverter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ def _normalize_pressure_value(value: float, unit: str | None, entity_id: str) ->
         return value / 100
 
     try:
-        return AtmosphericPressureConverter.convert(value, unit, UnitOfPressure.HPA)
+        return PressureConverter.convert(value, unit, UnitOfPressure.HPA)
     except Exception:
         _LOGGER.warning(
             "Unknown pressure unit '%s' for %s, assuming hPa",
