@@ -92,16 +92,20 @@ class ZambrettiSagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return ZambrettiSagerOptionsFlowHandler()
+        return ZambrettiSagerOptionsFlowHandler(config_entry)
 
 
 class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
+    def __init__(self, config_entry) -> None:
+        super().__init__()
+        self._config_entry = config_entry
+
     async def async_step_init(self, user_input=None):
         if user_input is not None:
             user_input = _normalize_optional_entities(_apply_location(user_input))
             return self.async_create_entry(title="", data=user_input)
 
-        entry = self.config_entry
+        entry = self._config_entry
         current_pressure = entry.options.get(CONF_PRESSURE_SENSOR) or entry.data.get(CONF_PRESSURE_SENSOR)
         current_wind = entry.options.get(CONF_WIND_SENSOR) or entry.data.get(CONF_WIND_SENSOR)
         current_temp = entry.options.get(CONF_TEMPERATURE_SENSOR) or entry.data.get(CONF_TEMPERATURE_SENSOR)
@@ -124,15 +128,28 @@ class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
                 "longitude": self.hass.config.longitude,
             }
 
+        # Строим схему — optional поля с None-значением не передаём как default,
+        # чтобы voluptuous не упал на невалидном entity_id
+        schema_dict = {
+            vol.Required(CONF_PRESSURE_SENSOR, default=current_pressure): PRESSURE_SENSOR_SELECTOR,
+        }
+
+        if current_wind:
+            schema_dict[vol.Optional(CONF_WIND_SENSOR, default=current_wind)] = WIND_SENSOR_SELECTOR
+        else:
+            schema_dict[vol.Optional(CONF_WIND_SENSOR)] = WIND_SENSOR_SELECTOR
+
+        if current_temp:
+            schema_dict[vol.Optional(CONF_TEMPERATURE_SENSOR, default=current_temp)] = TEMPERATURE_SENSOR_SELECTOR
+        else:
+            schema_dict[vol.Optional(CONF_TEMPERATURE_SENSOR)] = TEMPERATURE_SENSOR_SELECTOR
+
+        schema_dict[vol.Optional(CONF_USE_SEA_LEVEL, default=current_use_sea_level)] = selector.BooleanSelector()
+        schema_dict[vol.Optional(CONF_LOCATION, default=default_location)] = selector.LocationSelector(
+            selector.LocationSelectorConfig(radius=False, icon="mdi:map-marker")
+        )
+
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Required(CONF_PRESSURE_SENSOR, default=current_pressure): PRESSURE_SENSOR_SELECTOR,
-                vol.Optional(CONF_WIND_SENSOR, default=current_wind): WIND_SENSOR_SELECTOR,
-                vol.Optional(CONF_TEMPERATURE_SENSOR, default=current_temp): TEMPERATURE_SENSOR_SELECTOR,
-                vol.Optional(CONF_USE_SEA_LEVEL, default=current_use_sea_level): selector.BooleanSelector(),
-                vol.Optional(CONF_LOCATION, default=default_location): selector.LocationSelector(
-                    selector.LocationSelectorConfig(radius=False, icon="mdi:map-marker")
-                ),
-            }),
+            data_schema=vol.Schema(schema_dict),
         )
