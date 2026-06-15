@@ -7,8 +7,8 @@ import datetime
 import logging
 from dataclasses import dataclass
 
-from homeassistant.components.recorder import get_instance, history
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.components.recorder import get_instance, history
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -76,16 +76,31 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         """Прочитать текущее давление, историю и ветер."""
         pressure_state = self.hass.states.get(self.pressure_id)
         if not pressure_state or pressure_state.state in ("unknown", "unavailable"):
+            _LOGGER.debug(
+                "Pressure sensor %s not ready yet (state: %s)",
+                self.pressure_id,
+                pressure_state.state if pressure_state else "not found",
+            )
             return ForecastData(available=False)
 
         try:
             p_now_raw = parse_pressure_hpa(pressure_state)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as err:
+            _LOGGER.error("Invalid pressure value for %s: %s", self.pressure_id, err)
             raise UpdateFailed(f"Invalid pressure state for {self.pressure_id}") from None
 
         p_now = self._correct_pressure(p_now_raw)
         history_raw = await self._fetch_history_pressures()
         wind = self._get_wind_direction()
+
+        _LOGGER.debug(
+            "Coordinator update: p_now=%.1f p_3h=%s p_6h=%s p_12h=%s wind=%s",
+            p_now,
+            history_raw.get(3),
+            history_raw.get(6),
+            history_raw.get(12),
+            wind,
+        )
 
         return ForecastData(
             available=True,
@@ -175,7 +190,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         results = await asyncio.gather(
             *(self._get_history_pressure(hours) for hours in HISTORY_HOURS)
         )
-        return dict(zip(HISTORY_HOURS, results, strict=True))
+        return dict(zip(HISTORY_HOURS, results))
 
     async def _get_history_pressure(self, hours: int) -> float | None:
         """Получить давление N часов назад через recorder."""
@@ -217,5 +232,12 @@ async def async_create_coordinator(
             )
 
     coordinator = ZambrettiSagerCoordinator(hass, entry, altitude)
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        # Не блокируем загрузку если сенсор ещё не готов при старте HA
+        _LOGGER.warning(
+            "Initial data fetch failed for %s, will retry automatically",
+            entry.title,
+        )
     return coordinator

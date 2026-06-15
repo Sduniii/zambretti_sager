@@ -11,6 +11,8 @@ from homeassistant.util.unit_conversion import PressureConverter
 
 _LOGGER = logging.getLogger(__name__)
 
+_INVALID_STATES = frozenset({"unknown", "unavailable", "none", ""})
+
 _HPA_UNITS = frozenset({
     UnitOfPressure.HPA,
     UnitOfPressure.MBAR,
@@ -50,6 +52,7 @@ def calculate_sea_level_pressure(pressure, temperature, altitude):
 def _normalize_pressure_value(value: float, unit: str | None, entity_id: str) -> float:
     """Нормализовать числовое значение давления в hPa."""
     if unit in _HPA_UNITS or unit is None:
+        # Если единица не указана, но значение > 2000 — скорее всего Па
         if unit is None and value > 2000:
             return value / 100
         return value
@@ -70,28 +73,33 @@ def _normalize_pressure_value(value: float, unit: str | None, entity_id: str) ->
 
 def parse_pressure_hpa(state: State) -> float:
     """Прочитать давление из состояния сенсора и нормализовать в hPa."""
+    if state.state.lower() in _INVALID_STATES:
+        raise ValueError(f"Sensor {state.entity_id} has invalid state: {state.state!r}")
     value = float(state.state)
     unit = state.attributes.get("unit_of_measurement")
     return _normalize_pressure_value(value, unit, state.entity_id)
 
 
 def parse_pressure_hpa_from_history(history_state) -> float:
-    """Прочитать давление из записи recorder (State или dict)."""
+    """Прочитать давление из записи recorder (State или dict или LazyState)."""
+
+    # Объект State из homeassistant.core
     if isinstance(history_state, State):
         return parse_pressure_hpa(history_state)
 
+    # dict — компактный формат recorder в новых версиях HA
     if isinstance(history_state, dict):
         state_value = history_state.get("state") or history_state.get("s")
-        if state_value in (None, "unknown", "unavailable"):
-            raise ValueError(f"Invalid history pressure state: {state_value}")
-
-        unit = history_state.get("unit_of_measurement")
+        if state_value is None or str(state_value).lower() in _INVALID_STATES:
+            raise ValueError(f"Invalid history pressure state: {state_value!r}")
+        unit = history_state.get("unit_of_measurement") or history_state.get("uom")
         entity_id = history_state.get("entity_id", "history")
         return _normalize_pressure_value(float(state_value), unit, entity_id)
 
+    # LazyState или любой другой объект с атрибутами
     state_value = getattr(history_state, "state", None)
-    if state_value in (None, "unknown", "unavailable"):
-        raise ValueError(f"Invalid history pressure state: {state_value}")
+    if state_value is None or str(state_value).lower() in _INVALID_STATES:
+        raise ValueError(f"Invalid history pressure state: {state_value!r}")
 
     unit = getattr(history_state, "attributes", {}).get("unit_of_measurement")
     entity_id = getattr(history_state, "entity_id", "history")
