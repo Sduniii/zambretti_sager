@@ -21,18 +21,21 @@ OPTIONAL_ENTITY_KEYS = (CONF_WIND_SENSOR, CONF_TEMPERATURE_SENSOR)
 PRESSURE_SENSOR_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
         domain="sensor",
+        device_class=["atmospheric_pressure", "pressure"],
     )
 )
 
 WIND_SENSOR_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
         domain="sensor",
+        device_class=["wind_direction", "wind_speed"],
     )
 )
 
 TEMPERATURE_SENSOR_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
         domain="sensor",
+        device_class="temperature",
     )
 )
 
