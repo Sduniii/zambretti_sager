@@ -1,5 +1,7 @@
 DOMAIN = "zambretti_sager"
 
+VERSION = "1.7.1"
+
 CONF_PRESSURE_SENSOR = "pressure_sensor"
 CONF_WIND_SENSOR = "wind_sensor"
 CONF_TEMPERATURE_SENSOR = "temperature_sensor"
@@ -44,3 +46,79 @@ ZAMBRETTI_MAPPING = {
     31: "Stormy, Possibly Improving",
     32: "Stormy, Much Rain"
 }
+
+# Пороги тренда давления по алгоритму Sager (hPa за ~3 ч)
+SAGER_TREND_RAPID = 1.4
+SAGER_TREND_SLOW = 0.7
+
+WIND_COMPASS = ("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+
+SEA_LEVEL_SENSOR_HINTS = (
+    "sea_level",
+    "sealevel",
+    "mslp",
+    "relative",
+    "qnh",
+    "barometric",
+)
+
+
+def classify_pressure_trend(delta_hpa: float) -> str:
+    """Классифицировать тренд давления для алгоритма Sager."""
+    if delta_hpa >= SAGER_TREND_RAPID:
+        return "rising_rapidly"
+    if delta_hpa >= SAGER_TREND_SLOW:
+        return "rising_slowly"
+    if delta_hpa <= -SAGER_TREND_RAPID:
+        return "falling_rapidly"
+    if delta_hpa <= -SAGER_TREND_SLOW:
+        return "falling_slowly"
+    return "steady"
+
+
+def wind_degrees_to_compass(degrees: float | None) -> str | None:
+    """Преобразовать направление ветра в румб (N, NE, ...)."""
+    if degrees is None:
+        return None
+    index = round(degrees / 45) % 8
+    return WIND_COMPASS[index]
+
+
+def calculate_sager_forecast(
+    pressure_hpa: float,
+    delta_hpa: float,
+    wind_degrees: float | None = None,
+) -> str:
+    """Упрощённый прогноз Sager по давлению, тренду и направлению ветра."""
+    trend = classify_pressure_trend(delta_hpa)
+    wind = wind_degrees_to_compass(wind_degrees)
+
+    if pressure_hpa > 1020:
+        if trend in ("rising_rapidly", "rising_slowly"):
+            forecast = "Fair, improving"
+        elif trend in ("falling_rapidly", "falling_slowly"):
+            forecast = "Fair now, tending to deteriorate"
+        else:
+            forecast = "Fair, no important change"
+    elif pressure_hpa < 1005:
+        if trend in ("falling_rapidly", "falling_slowly"):
+            forecast = "Unsettled, rain likely"
+        elif trend in ("rising_rapidly", "rising_slowly"):
+            forecast = "Unsettled, probably improving"
+        else:
+            forecast = "Unsettled, rain at times"
+    elif trend == "rising_rapidly":
+        forecast = "Changeable, becoming fairer"
+    elif trend == "falling_rapidly":
+        forecast = "Changeable, becoming more unsettled"
+    elif trend == "rising_slowly":
+        forecast = "Variable, slowly improving"
+    elif trend == "falling_slowly":
+        forecast = "Variable, slowly deteriorating"
+    else:
+        forecast = "Variable, some change expected"
+
+    if wind:
+        forecast = f"{forecast}. {wind} winds expected"
+
+    return forecast

@@ -1,150 +1,49 @@
-import logging
-import datetime
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.components.recorder import history, get_instance
-from homeassistant.util import dt as dt_util
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.const import PERCENTAGE
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
 from .const import (
     DOMAIN,
-    CONF_PRESSURE_SENSOR,
-    CONF_WIND_SENSOR,
-    CONF_TEMPERATURE_SENSOR,
-    CONF_LATITUDE,
-    CONF_LONGITUDE,
-    CONF_USE_SEA_LEVEL,
-    ZAMBRETTI_MAPPING
+    VERSION,
+    ZAMBRETTI_MAPPING,
+    calculate_sager_forecast,
 )
-
-_LOGGER = logging.getLogger(__name__)
-
-VERSION = "1.6.0"
-
-
-async def get_elevation(hass, latitude, longitude):
-    """Получить высоту над уровнем моря через Open-Elevation API."""
-    try:
-        import aiohttp
-        url = f"https://api.open-elevation.com/api/v1/lookup?locations={latitude},{longitude}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data['results'][0]['elevation']
-    except Exception as e:
-        _LOGGER.warning("Failed to get elevation from API: %s", e)
-    return None
-
-
-def calculate_sea_level_pressure(pressure, temperature, altitude):
-    """Рассчитать давление на уровне моря.
-
-    Args:
-        pressure: Абсолютное давление в hPa
-        temperature: Температура в °C
-        altitude: Высота над уровнем моря в метрах
-
-    Returns:
-        Давление на уровне моря в hPa
-    """
-    if altitude is None or altitude == 0:
-        return pressure
-
-    # P_sea = P_abs / (1 - (0.0065 * h) / (T + 0.0065 * h + 273.15))^5.257
-    factor = 1 - (0.0065 * altitude) / (temperature + 0.0065 * altitude + 273.15)
-
-    if factor <= 0:
-        return pressure + (altitude / 8.3)
-
-    return pressure / (factor ** 5.257)
-
+from .coordinator import ForecastData, ZambrettiSagerCoordinator
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Настройка сенсоров.
-
-    Высота всегда запрашивается при наличии координат (независимо от use_sea_level),
-    чтобы она была готова если пользователь включит коррекцию через Options
-    без перезагрузки HA.
-    Запрос делается один раз и передаётся всем сенсорам.
-    """
-    pressure_id   = entry.options.get(CONF_PRESSURE_SENSOR,    entry.data.get(CONF_PRESSURE_SENSOR))
-    wind_id       = entry.options.get(CONF_WIND_SENSOR,         entry.data.get(CONF_WIND_SENSOR))
-    temp_id       = entry.options.get(CONF_TEMPERATURE_SENSOR,  entry.data.get(CONF_TEMPERATURE_SENSOR))
-    use_sea_level = entry.options.get(CONF_USE_SEA_LEVEL,       entry.data.get(CONF_USE_SEA_LEVEL, False))
-    latitude      = entry.options.get(CONF_LATITUDE,            entry.data.get(CONF_LATITUDE))
-    longitude     = entry.options.get(CONF_LONGITUDE,           entry.data.get(CONF_LONGITUDE))
-    device_id     = entry.entry_id
-
-    # Запрашиваем высоту при наличии координат — независимо от use_sea_level.
-    # Это позволяет включить коррекцию через Options без перезагрузки HA.
-    altitude = None
-    if latitude and longitude:
-        altitude = await get_elevation(hass, latitude, longitude)
-        if altitude is not None:
-            _LOGGER.info("Altitude for (%.6f, %.6f): %.1f m", latitude, longitude, altitude)
-        else:
-            _LOGGER.warning("Could not determine altitude, sea level correction will use raw pressure")
+    """Настройка сенсоров."""
+    coordinator: ZambrettiSagerCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     async_add_entities([
-        ZambrettiSensor(pressure_id, temp_id, use_sea_level, altitude, device_id),
-        SagerSensor(pressure_id, wind_id, temp_id, use_sea_level, altitude, device_id),
-        ZambrettiForecast6h(pressure_id, temp_id, use_sea_level, altitude, device_id),
-        ZambrettiForecast12h(pressure_id, temp_id, use_sea_level, altitude, device_id),
-        ZambrettiForecast24h(pressure_id, temp_id, use_sea_level, altitude, device_id),
-        PrecipitationProbability(pressure_id, temp_id, use_sea_level, altitude, device_id),
-    ], True)
+        ZambrettiSensor(coordinator),
+        SagerSensor(coordinator),
+        ZambrettiForecast6h(coordinator),
+        ZambrettiForecast12h(coordinator),
+        ZambrettiForecast24h(coordinator),
+        PrecipitationProbability(coordinator),
+    ])
 
 
-class WeatherSensorBase(SensorEntity):
-    """Базовый класс: device_info, коррекция давления, получение истории."""
+class WeatherSensorBase(CoordinatorEntity, SensorEntity):
+    """Базовый класс сенсоров прогноза."""
 
-    def __init__(self, device_id, pressure_id, temp_id, use_sea_level, altitude):
-        self._device_id   = device_id
-        self._pressure_id = pressure_id
-        self._temp_id     = temp_id
-        self._use_sea_level = use_sea_level
-        self._altitude    = altitude
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self._device_id)},
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, coordinator.entry.entry_id)},
             "name": "Maksym's Weather Station",
             "manufacturer": "Zambretti & Sager",
             "model": "Software Forecaster",
             "sw_version": VERSION,
         }
 
-    def _get_temperature(self):
-        """Вернуть текущую температуру или стандартные 15 °C."""
-        if self._temp_id:
-            state = self.hass.states.get(self._temp_id)
-            if state and state.state not in ("unknown", "unavailable"):
-                try:
-                    return float(state.state)
-                except ValueError:
-                    pass
-        return 15.0
+    @property
+    def _data(self) -> ForecastData | None:
+        """Текущие данные координатора."""
+        return self.coordinator.data
 
-    def _correct_pressure(self, raw_pressure):
-        """Применить коррекцию на уровень моря, если включено и высота известна."""
-        if self._use_sea_level and self._altitude is not None:
-            return calculate_sea_level_pressure(raw_pressure, self._get_temperature(), self._altitude)
-        return raw_pressure
-
-    async def _get_history_pressure(self, hours):
-        """Получить давление N часов назад через актуальный API recorder."""
-        start_time = dt_util.utcnow() - datetime.timedelta(hours=hours)
-        try:
-            events = await get_instance(self.hass).async_add_executor_job(
-                history.get_significant_states,
-                self.hass, start_time, None, [self._pressure_id]
-            )
-            if self._pressure_id in events and events[self._pressure_id]:
-                return float(events[self._pressure_id][0].state)
-        except Exception:
-            _LOGGER.exception("Error fetching pressure history for %s", self._pressure_id)
-        return None
-
-    def _zambretti_index(self, p_now, delta):
+    @staticmethod
+    def _zambretti_index(p_now: float, delta: float) -> int:
         """Вычислить индекс Замбретти (1–32)."""
         if delta <= -1.6:
             z = round(127 - 0.12 * p_now)
@@ -154,198 +53,171 @@ class WeatherSensorBase(SensorEntity):
             z = round(144 - 0.13 * p_now)
         return max(1, min(z, 32))
 
+    def _set_unavailable(self) -> None:
+        """Пометить сенсор недоступным."""
+        self._attr_available = False
+
 
 class ZambrettiSensor(WeatherSensorBase):
     """Текущий прогноз Замбретти на основе тренда за 3 часа."""
 
-    def __init__(self, pressure_id, temp_id, use_sea_level, altitude, device_id):
-        super().__init__(device_id, pressure_id, temp_id, use_sea_level, altitude)
-        self._attr_name       = "Zambretti Forecast"
-        self._attr_unique_id  = f"{pressure_id}_zambretti"
-        self._state           = "Calculating..."
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_name = "Zambretti Forecast"
+        self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti"
 
-    async def async_update(self):
-        current = self.hass.states.get(self._pressure_id)
-        if not current or current.state in ("unknown", "unavailable"):
+    def _handle_coordinator_update(self) -> None:
+        data = self._data
+        if not data or not data.available or data.p_now is None or data.p_3h is None:
+            self._set_unavailable()
             return
-        try:
-            p_now = self._correct_pressure(float(current.state))
-            p_old_raw = await self._get_history_pressure(3)
-            p_old = self._correct_pressure(p_old_raw) if p_old_raw is not None else p_now
 
-            delta = p_now - p_old
-            self._state = ZAMBRETTI_MAPPING.get(self._zambretti_index(p_now, delta), "Stable")
-        except Exception:
-            _LOGGER.exception("Error updating ZambrettiSensor")
-
-    @property
-    def state(self):
-        return self._state
+        delta = data.p_now - data.p_3h
+        self._attr_available = True
+        self._attr_native_value = ZAMBRETTI_MAPPING.get(
+            self._zambretti_index(data.p_now, delta),
+            "Stable",
+        )
 
 
 class SagerSensor(WeatherSensorBase):
-    """Прогноз Сейгера на основе давления (ветер опционален)."""
+    """Прогноз Сейгера на основе давления, тренда и направления ветра."""
 
-    def __init__(self, pressure_id, wind_id, temp_id, use_sea_level, altitude, device_id):
-        super().__init__(device_id, pressure_id, temp_id, use_sea_level, altitude)
-        self._wind_id        = wind_id
-        self._attr_name      = "Sager Forecast"
-        self._attr_unique_id = f"{pressure_id}_sager"
-        self._state          = "Calculating..."
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_name = "Sager Forecast"
+        self._attr_unique_id = f"{coordinator.entry.entry_id}_sager"
 
-    async def async_update(self):
-        p_state = self.hass.states.get(self._pressure_id)
-        if not p_state or p_state.state in ("unknown", "unavailable"):
+    def _handle_coordinator_update(self) -> None:
+        data = self._data
+        if not data or not data.available or data.p_now is None or data.p_3h is None:
+            self._set_unavailable()
             return
-        try:
-            p = self._correct_pressure(float(p_state.state))
 
-            if p > 1020:
-                self._state = "Fair, No Change"
-            elif p < 1005:
-                self._state = "Unsettled, Rain"
-            else:
-                self._state = "Variable"
-        except Exception:
-            _LOGGER.exception("Error updating SagerSensor")
-
-    @property
-    def state(self):
-        return self._state
+        delta = data.p_now - data.p_3h
+        self._attr_available = True
+        self._attr_native_value = calculate_sager_forecast(
+            data.p_now,
+            delta,
+            data.wind_degrees,
+        )
 
 
 class ZambrettiForecast6h(WeatherSensorBase):
     """Прогноз на 6 ч: тренд за 3 ч × 2."""
 
-    def __init__(self, pressure_id, temp_id, use_sea_level, altitude, device_id):
-        super().__init__(device_id, pressure_id, temp_id, use_sea_level, altitude)
-        self._attr_name      = "Zambretti Forecast 6h"
-        self._attr_unique_id = f"{pressure_id}_zambretti_6h"
-        self._state          = "Calculating..."
-        self._attr_icon      = "mdi:weather-partly-cloudy"
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_name = "Zambretti Forecast 6h"
+        self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_6h"
+        self._attr_icon = "mdi:weather-partly-cloudy"
 
-    async def async_update(self):
-        current = self.hass.states.get(self._pressure_id)
-        if not current or current.state in ("unknown", "unavailable"):
+    def _handle_coordinator_update(self) -> None:
+        data = self._data
+        if not data or not data.available or data.p_now is None or data.p_3h is None:
+            self._set_unavailable()
             return
-        try:
-            p_now = self._correct_pressure(float(current.state))
-            p_old_raw = await self._get_history_pressure(3)
-            p_old = self._correct_pressure(p_old_raw) if p_old_raw is not None else p_now
 
-            delta_3h  = p_now - p_old
-            predicted = p_now + delta_3h * 2  # экстраполяция: 3ч тренд → +6ч
-
-            self._state = ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_3h), "Stable")
-        except Exception:
-            _LOGGER.exception("Error updating ZambrettiForecast6h")
-
-    @property
-    def state(self):
-        return self._state
+        delta_6h = (data.p_now - data.p_3h) * 2
+        predicted = data.p_now + delta_6h
+        self._attr_available = True
+        self._attr_native_value = ZAMBRETTI_MAPPING.get(
+            self._zambretti_index(predicted, delta_6h),
+            "Stable",
+        )
 
 
 class ZambrettiForecast12h(WeatherSensorBase):
     """Прогноз на 12 ч: тренд за 6 ч × 2."""
 
-    def __init__(self, pressure_id, temp_id, use_sea_level, altitude, device_id):
-        super().__init__(device_id, pressure_id, temp_id, use_sea_level, altitude)
-        self._attr_name      = "Zambretti Forecast 12h"
-        self._attr_unique_id = f"{pressure_id}_zambretti_12h"
-        self._state          = "Calculating..."
-        self._attr_icon      = "mdi:weather-cloudy"
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_name = "Zambretti Forecast 12h"
+        self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_12h"
+        self._attr_icon = "mdi:weather-cloudy"
 
-    async def async_update(self):
-        current = self.hass.states.get(self._pressure_id)
-        if not current or current.state in ("unknown", "unavailable"):
+    def _handle_coordinator_update(self) -> None:
+        data = self._data
+        if not data or not data.available or data.p_now is None or data.p_6h is None:
+            self._set_unavailable()
             return
-        try:
-            p_now = self._correct_pressure(float(current.state))
-            p_old_raw = await self._get_history_pressure(6)
-            p_old = self._correct_pressure(p_old_raw) if p_old_raw is not None else p_now
 
-            delta_6h  = p_now - p_old
-            predicted = p_now + delta_6h * 2  # экстраполяция: 6ч тренд → +12ч
-
-            self._state = ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_6h), "Stable")
-        except Exception:
-            _LOGGER.exception("Error updating ZambrettiForecast12h")
-
-    @property
-    def state(self):
-        return self._state
+        delta_12h = (data.p_now - data.p_6h) * 2
+        predicted = data.p_now + delta_12h
+        self._attr_available = True
+        self._attr_native_value = ZAMBRETTI_MAPPING.get(
+            self._zambretti_index(predicted, delta_12h),
+            "Stable",
+        )
 
 
 class ZambrettiForecast24h(WeatherSensorBase):
     """Прогноз на 24 ч: тренд за 12 ч × 2."""
 
-    def __init__(self, pressure_id, temp_id, use_sea_level, altitude, device_id):
-        super().__init__(device_id, pressure_id, temp_id, use_sea_level, altitude)
-        self._attr_name      = "Zambretti Forecast 24h"
-        self._attr_unique_id = f"{pressure_id}_zambretti_24h"
-        self._state          = "Calculating..."
-        self._attr_icon      = "mdi:weather-sunset"
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_name = "Zambretti Forecast 24h"
+        self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_24h"
+        self._attr_icon = "mdi:weather-sunset"
 
-    async def async_update(self):
-        current = self.hass.states.get(self._pressure_id)
-        if not current or current.state in ("unknown", "unavailable"):
+    def _handle_coordinator_update(self) -> None:
+        data = self._data
+        if not data or not data.available or data.p_now is None or data.p_12h is None:
+            self._set_unavailable()
             return
-        try:
-            p_now = self._correct_pressure(float(current.state))
-            p_old_raw = await self._get_history_pressure(12)
-            p_old = self._correct_pressure(p_old_raw) if p_old_raw is not None else p_now
 
-            delta_12h = p_now - p_old
-            predicted = p_now + delta_12h * 2  # экстраполяция: 12ч тренд → +24ч
-
-            self._state = ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_12h), "Stable")
-        except Exception:
-            _LOGGER.exception("Error updating ZambrettiForecast24h")
-
-    @property
-    def state(self):
-        return self._state
+        delta_24h = (data.p_now - data.p_12h) * 2
+        predicted = data.p_now + delta_24h
+        self._attr_available = True
+        self._attr_native_value = ZAMBRETTI_MAPPING.get(
+            self._zambretti_index(predicted, delta_24h),
+            "Stable",
+        )
 
 
 class PrecipitationProbability(WeatherSensorBase):
     """Вероятность осадков на основе давления и тренда за 3 часа."""
 
-    def __init__(self, pressure_id, temp_id, use_sea_level, altitude, device_id):
-        super().__init__(device_id, pressure_id, temp_id, use_sea_level, altitude)
-        self._attr_name               = "Precipitation Probability"
-        self._attr_unique_id          = f"{pressure_id}_precipitation_probability"
-        self._state                   = 0
-        self._attr_icon               = "mdi:water-percent"
-        self._attr_unit_of_measurement = "%"
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_name = "Precipitation Probability"
+        self._attr_unique_id = f"{coordinator.entry.entry_id}_precipitation_probability"
+        self._attr_icon = "mdi:water-percent"
+        self._attr_native_unit_of_measurement = PERCENTAGE
+        self._attr_state_class = SensorStateClass.MEASUREMENT
 
-    async def async_update(self):
-        current = self.hass.states.get(self._pressure_id)
-        if not current or current.state in ("unknown", "unavailable"):
+    def _handle_coordinator_update(self) -> None:
+        data = self._data
+        if not data or not data.available or data.p_now is None or data.p_3h is None:
+            self._set_unavailable()
             return
-        try:
-            p_now = self._correct_pressure(float(current.state))
-            p_old_raw = await self._get_history_pressure(3)
-            p_old = self._correct_pressure(p_old_raw) if p_old_raw is not None else p_now
 
-            delta = p_now - p_old
+        delta = data.p_now - data.p_3h
+        p_now = data.p_now
 
-            if p_now < 1000:   base_prob = 90
-            elif p_now < 1005: base_prob = 70
-            elif p_now < 1010: base_prob = 50
-            elif p_now < 1015: base_prob = 30
-            elif p_now < 1020: base_prob = 15
-            else:              base_prob = 5
+        if p_now < 1000:
+            base_prob = 90
+        elif p_now < 1005:
+            base_prob = 70
+        elif p_now < 1010:
+            base_prob = 50
+        elif p_now < 1015:
+            base_prob = 30
+        elif p_now < 1020:
+            base_prob = 15
+        else:
+            base_prob = 5
 
-            if delta < -3.0:   trend_modifier = 30
-            elif delta < -1.6: trend_modifier = 15
-            elif delta > 3.0:  trend_modifier = -30
-            elif delta > 1.6:  trend_modifier = -15
-            else:              trend_modifier = 0
+        if delta < -3.0:
+            trend_modifier = 30
+        elif delta < -1.6:
+            trend_modifier = 15
+        elif delta > 3.0:
+            trend_modifier = -30
+        elif delta > 1.6:
+            trend_modifier = -15
+        else:
+            trend_modifier = 0
 
-            self._state = round(max(0, min(100, base_prob + trend_modifier)))
-        except Exception:
-            _LOGGER.exception("Error updating PrecipitationProbability")
-
-    @property
-    def state(self):
-        return self._state
+        self._attr_available = True
+        self._attr_native_value = round(max(0, min(100, base_prob + trend_modifier)))

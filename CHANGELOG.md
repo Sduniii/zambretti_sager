@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.7.1] — 2026-06-15
+
+### Fixed
+- **Duplicate recorder queries** — all sensors share one `DataUpdateCoordinator` update cycle
+- **Entity unique IDs** — based on config entry ID, stable when pressure sensor changes in options
+- **History parsing** — handles recorder `State` objects and compressed dict responses
+- **Optional sensors** — empty wind/temperature selections are cleared instead of saved as blank strings
+
+### Changed
+- Sensors use `CoordinatorEntity` and `_attr_native_value` (modern Home Assistant pattern)
+- Wind and temperature selectors filter by `wind_direction` and `temperature` device classes
+- Options flow uses the current `config_entry` API
+
+---
+
+## [1.7.0] — 2026-06-15
+
+### Fixed
+- **Sager forecast** — now uses pressure trend (3 h) and wind direction when available
+- **Pressure units** — automatic conversion to hPa (Pa, inHg, mmHg, etc.)
+- **Sea level correction** — skips correction when sensor already reports sea level pressure
+- **Unavailable state** — sensors mark themselves unavailable when pressure data is missing
+- **Extended forecasts** — extrapolated delta is used consistently for 6h/12h/24h Zambretti forecasts
+- **Coordinates (0, 0)** — no longer treated as missing location
+- **Duplicate integrations** — config flow aborts if the same pressure sensor is already configured
+- **Elevation API** — uses Home Assistant shared aiohttp session instead of creating a new one
+
+### Changed
+- Pressure sensor selector in config flow filters by `atmospheric_pressure` device class
+
+---
+
 ## [1.4.0] — 2026-06-15
 
 ### Added

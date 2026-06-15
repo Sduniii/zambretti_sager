@@ -1,13 +1,21 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
 <img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png" alt="Zambretti & Sager Logo" width="400">
 
-## 🎉 What's New in v1.4.0
+## 🎉 What's New in v1.7.0
+
+- **Sager forecast fix** — now uses pressure trend and wind direction (not just static pressure thresholds)
+- **Pressure unit conversion** — supports Pa, inHg, mmHg and other units automatically
+- **Smarter sea level correction** — avoids double-correcting sensors that already report sea level pressure
+- **Unavailable handling** — sensors correctly go unavailable when pressure data is missing
+- **Config flow** — prevents duplicate setups for the same pressure sensor
+
+## Previous: v1.4.0
 
 - **Localization support** — the setup UI now automatically adapts to your Home Assistant language. English and Russian are fully supported. Change your language in your HA profile and the integration follows.
 - **Removed built-in card** — the Zambretti Barometer Card has been removed from the integration. Use standard Lovelace cards or any community card to display your sensors.
@@ -107,7 +115,7 @@ To change the language, go to your **HA profile → Language**.
 
 - Home Assistant 2024.1.0 or newer
 - A barometric pressure sensor (hPa)
-- A wind direction sensor (degrees)
+- A wind direction sensor (degrees, optional but recommended for Sager)
 - A temperature sensor (optional, for sea level correction)
 
 ## Troubleshooting

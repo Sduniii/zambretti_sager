@@ -19,7 +19,13 @@ Extended forecasts for **6h, 12h, and 24h** ahead, plus a **precipitation probab
 - Automatic altitude correction for accurate sea-level pressure conversion
 - Supports **English and Russian** — UI adapts to your Home Assistant language setting
 
-## What's new in v1.4.0
+## What's new in v1.7.0
+
+- 🐛 Bug fixes for Sager forecast, pressure units, and sea level correction
+- ✅ Sensors go unavailable when pressure data is missing
+- 🔒 Config flow prevents duplicate integrations
+
+## Previous: v1.4.0
 
 - 🌐 Full localization support (English + Russian)
 - 🧹 Removed built-in card — cleaner, lighter integration
@@ -38,5 +44,5 @@ Six sensors are created automatically and grouped under one device.
 ## Requirements
 
 - Barometric pressure sensor (hPa)
-- Wind direction sensor (degrees)
+- Wind direction sensor (degrees, optional but recommended for Sager)
 - Temperature sensor (optional, for altitude correction)
