@@ -40,7 +40,7 @@ class ZambrettiSagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_PRESSURE_SENSOR): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
-                vol.Required(CONF_WIND_SENSOR): selector.EntitySelector(
+                vol.Optional(CONF_WIND_SENSOR): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
                 vol.Optional(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
@@ -119,7 +119,7 @@ class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required(CONF_PRESSURE_SENSOR, default=current_pressure): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
-                vol.Required(CONF_WIND_SENSOR, default=current_wind): selector.EntitySelector(
+                vol.Optional(CONF_WIND_SENSOR, default=current_wind): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
                 vol.Optional(CONF_TEMPERATURE_SENSOR, default=current_temp): selector.EntitySelector(
