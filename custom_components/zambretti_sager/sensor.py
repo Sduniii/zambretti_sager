@@ -190,8 +190,10 @@ class SagerSensor(WeatherSensorBase):
         p_state = self.hass.states.get(self._pressure_id)
         w_state = self.hass.states.get(self._wind_id)
 
-        if not p_state or not w_state or w_state.state in ["unknown", "unavailable"]:
+        # Давление обязательно
+        if not p_state or p_state.state in ["unknown", "unavailable"]:
             return
+
         try:
             p = float(p_state.state)
 
@@ -205,12 +207,16 @@ class SagerSensor(WeatherSensorBase):
                             temp = float(temp_state.state)
                         except:
                             pass
-
                 p = calculate_sea_level_pressure(p, temp, self._altitude)
 
-            # ФИКС ГРАДУСА: убираем символ °
-            wind_raw = w_state.state.replace("°", "").strip()
-            wind = float(wind_raw)
+            # Ветер опциональный — если недоступен, считаем только по давлению
+            wind = None
+            if w_state and w_state.state not in ["unknown", "unavailable"]:
+                try:
+                    wind_raw = w_state.state.replace("°", "").strip()
+                    wind = float(wind_raw)
+                except:
+                    pass
 
             if p > 1020: self._state = "Fair, No Change"
             elif p < 1005: self._state = "Unsettled, Rain"
