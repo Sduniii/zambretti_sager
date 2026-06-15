@@ -1,32 +1,11 @@
 import logging
-from pathlib import Path
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.components.frontend import add_extra_js_url
-from aiohttp import web
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[str] = ["sensor"]
-
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Настройка интеграции при старте Home Assistant."""
-    # Путь к карточке
-    card_path = Path(__file__).parent / "zambretti-barometer-card.js"
-    card_url = "/zambretti_sager_card/zambretti-barometer-card.js"
-
-    # Регистрируем статический файл через aiohttp
-    async def serve_card(request):
-        return web.FileResponse(card_path)
-
-    hass.http.app.router.add_get(card_url, serve_card)
-
-    # Добавляем JS в frontend
-    add_extra_js_url(hass, card_url)
-
-    _LOGGER.info("Zambretti Barometer Card registered at %s", card_url)
-    return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Настройка интеграции при добавлении через интерфейс."""

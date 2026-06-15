@@ -1,163 +1,136 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
-## 🎉 What's New in v1.3.0
-
-**The Zambretti Barometer Card is now built-in!** No more manual installation - the beautiful visualization card is automatically included with the integration.
-
 <img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png" alt="Zambretti & Sager Logo" width="400">
+
+## 🎉 What's New in v1.4.0
+
+- **Localization support** — the setup UI now automatically adapts to your Home Assistant language. English and Russian are fully supported. Change your language in your HA profile and the integration follows.
+- **Removed built-in card** — the Zambretti Barometer Card has been removed from the integration. Use standard Lovelace cards or any community card to display your sensors.
+- **Cleaner codebase** — removed unused frontend and HTTP dependencies.
 
 ## Features
 
-- **Zambretti Forecast**: 32 different weather predictions based on pressure trends over 3 hours
-- **Sager Forecast**: Simplified weather prediction based on current pressure and wind direction
-- **Extended Forecasts**: Predictions for 6, 12, and 24 hours ahead
-- **Precipitation Probability**: Percentage chance of rain based on pressure trends
-- **Sea Level Pressure Correction**: Automatic altitude-based pressure correction for accurate forecasts
-- **Interactive Map Selection**: Choose your location on a map for automatic altitude detection
-- **Temperature Compensation**: Uses temperature sensor for precise pressure correction
+- **Zambretti Forecast** — 32 different weather predictions based on pressure trends over 3 hours
+- **Sager Forecast** — weather prediction based on current pressure and wind direction
+- **Extended Forecasts** — predictions for 6, 12, and 24 hours ahead
+- **Precipitation Probability** — percentage chance of rain based on pressure trends
+- **Sea Level Pressure Correction** — automatic altitude-based pressure correction for accurate forecasts
+- **Interactive Map Selection** — choose your location on a map for automatic altitude detection
+- **Temperature Compensation** — uses temperature sensor for precise pressure correction
+- **Localization** — English and Russian UI out of the box
 
 ## Installation
 
 ### HACS (Recommended)
 
 1. Open HACS in Home Assistant
-2. Go to "Integrations"
-3. Click the three dots in the top right corner
-4. Select "Custom repositories"
-5. Add this repository URL: `https://github.com/ziffmafiya/zambretti_sager`
-6. Select category "Integration"
-7. Click "Add"
-8. Find "Zambretti & Sager Weather Forecaster" in the list and install it
-9. Restart Home Assistant
+2. Go to **Integrations**
+3. Click the three dots → **Custom repositories**
+4. Add `https://github.com/ziffmafiya/zambretti_sager` with category **Integration**
+5. Find **Zambretti & Sager Weather Forecaster** and install it
+6. Restart Home Assistant
 
 ### Manual Installation
 
-1. Copy the `custom_components/zambretti_sager` folder to your Home Assistant's `custom_components` directory
+1. Copy `custom_components/zambretti_sager` to your Home Assistant `custom_components` directory
 2. Restart Home Assistant
 
 ## Configuration
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **Add Integration**
-3. Search for "Zambretti and Sager"
+3. Search for **Zambretti and Sager**
 4. Follow the setup wizard:
    - Select your **pressure sensor** (absolute or sea level pressure)
    - Select your **wind direction sensor**
    - (Optional) Select your **temperature sensor** for accurate sea level correction
-   - Enable **sea level pressure correction** if using absolute pressure sensor
+   - Enable **sea level pressure correction** if using an absolute pressure sensor
    - Click on the **map** to select your weather station location
 5. Click **Submit**
 
 ## Sensors
 
-The integration creates six sensors:
+The integration creates six sensors grouped under a single device:
 
-- **Zambretti Forecast**: Current detailed weather prediction (32 states)
-- **Sager Forecast**: Simplified weather prediction (3 states)
-- **Zambretti Forecast 6h**: Weather prediction for 6 hours ahead
-- **Zambretti Forecast 12h**: Weather prediction for 12 hours ahead
-- **Zambretti Forecast 24h**: Weather prediction for 24 hours ahead
-- **Precipitation Probability**: Chance of rain in percentage (0-100%)
+| Sensor | Description |
+|---|---|
+| **Zambretti Forecast** | Current detailed weather prediction (32 states) |
+| **Sager Forecast** | Simplified weather prediction |
+| **Zambretti Forecast 6h** | Prediction for 6 hours ahead |
+| **Zambretti Forecast 12h** | Prediction for 12 hours ahead |
+| **Zambretti Forecast 24h** | Prediction for 24 hours ahead |
+| **Precipitation Probability** | Chance of rain, 0–100% |
 
 ## How It Works
 
 ### Zambretti Algorithm
 
-The Zambretti algorithm analyzes barometric pressure trends over the past 3 hours:
-- **Falling pressure** (≤ -1.6 hPa): Indicates worsening weather
-- **Steady pressure** (-1.6 to +1.6 hPa): Stable conditions
-- **Rising pressure** (≥ +1.6 hPa): Improving weather
+Analyzes barometric pressure trends over the past 3 hours:
+
+- **Falling** (≤ −1.6 hPa) — worsening weather
+- **Steady** (−1.6 to +1.6 hPa) — stable conditions
+- **Rising** (≥ +1.6 hPa) — improving weather
+
+The result maps to one of 32 classical weather descriptions.
 
 ### Sager Algorithm
 
-The Sager algorithm uses current pressure and wind direction:
-- **High pressure** (> 1020 hPa): Fair weather
-- **Low pressure** (< 1005 hPa): Unsettled, rainy weather
-- **Medium pressure**: Variable conditions
+Uses current pressure and wind direction:
+
+- **> 1020 hPa** — Fair, No Change
+- **< 1005 hPa** — Unsettled, Rain
+- **1005–1020 hPa** — Variable
 
 ### Sea Level Pressure Correction
 
-If you're using an absolute pressure sensor and are above sea level, enable the correction feature. The integration will:
-1. Automatically fetch your altitude from the selected map location
-2. Apply the barometric formula using temperature data
-3. Convert absolute pressure to sea level pressure for accurate forecasts
+When enabled, the integration fetches your altitude from Open-Elevation API using the map location, then applies the barometric formula:
 
-Formula used:
 ```
-P_sea = P_abs / (1 - (0.0065 × altitude) / (T + 0.0065 × altitude + 273.15))^5.257
+P_sea = P_abs / (1 − (0.0065 × h) / (T + 0.0065 × h + 273.15))^5.257
 ```
+
+## Localization
+
+The setup UI is available in:
+
+- 🇬🇧 **English** — default
+- 🇷🇺 **Russian** — автоматически при языке `ru` в профиле HA
+
+To change the language, go to your **HA profile → Language**.
 
 ## Requirements
 
 - Home Assistant 2024.1.0 or newer
-- A pressure sensor (barometric pressure in hPa)
-- A wind direction sensor (in degrees)
-- (Optional) A temperature sensor for sea level correction
+- A barometric pressure sensor (hPa)
+- A wind direction sensor (degrees)
+- A temperature sensor (optional, for sea level correction)
 
 ## Troubleshooting
 
 **Forecast shows "Calculating..." or "Initializing..."**
-- Wait a few minutes for the integration to collect pressure history
-- Ensure your pressure sensor is providing valid data
+Wait a few minutes — the integration needs pressure history to calculate trends. Make sure the pressure sensor is providing valid data.
 
 **Inaccurate forecasts**
-- Enable sea level pressure correction if you're above sea level
-- Verify your location is correctly set on the map
-- Check that your temperature sensor is working
+Enable sea level correction if you're above sea level, verify the map location, and make sure the temperature sensor is working.
 
 **Altitude not detected**
-- The integration uses the Open-Elevation API
-- Check your Home Assistant has internet access
-- Altitude is fetched once at startup
-
-## Visualization
-
-### Zambretti Barometer Card
-
-A beautiful custom Lovelace card is **automatically included** with the integration:
-
-**Features:**
-- 🎨 Animated barometer gauge with gradient design
-- 📊 Pressure trend arrow (rising/falling/steady)
-- 🌈 Color-coded forecasts (green = good, red = storms)
-- 🌧️ Precipitation probability bar
-- 🎭 Animated weather icons
-
-**Usage:**
-
-After installing the integration, add the card to your dashboard using YAML editor:
-
-1. Edit your dashboard
-2. Click "Add Card"
-3. Choose "Manual" or click "Show Code Editor"
-4. Add this configuration:
-
-```yaml
-type: custom:zambretti-barometer-card
-pressure_entity: sensor.your_pressure_sensor
-zambretti_entity: sensor.zambretti_forecast
-precipitation_entity: sensor.precipitation_probability
-```
-
-Replace the entity IDs with your actual sensor names.
-
-**No manual installation required!** The card is bundled with the integration.
+The integration uses the [Open-Elevation API](https://open-elevation.com). Check that your Home Assistant instance has internet access. Altitude is fetched once at startup.
 
 ## Credits
 
-- **Zambretti Algorithm**: Developed by Negretti and Zambra in the early 1900s
-- **Sager Algorithm**: Developed by meteorologist Sager
-- **Integration Author**: Maksym
+- **Zambretti Algorithm** — developed by Negretti and Zambra in the early 1900s
+- **Sager Algorithm** — developed by meteorologist Raymond Sager
+- **Integration Author** — Maksym ([@ziffmafiya](https://github.com/ziffmafiya))
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT License — see [LICENSE](LICENSE) for details.
 
 ## Support
 
-If you encounter any issues or have suggestions, please [open an issue](https://github.com/ziffmafiya/zambretti_sager/issues) on GitHub.
+Found a bug or have a suggestion? [Open an issue](https://github.com/ziffmafiya/zambretti_sager/issues) on GitHub.
