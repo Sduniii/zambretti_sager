@@ -18,6 +18,7 @@ from .const import (
     CONF_LONGITUDE,
     CONF_PRESSURE_SENSOR,
     CONF_TEMPERATURE_SENSOR,
+    CONF_HUMIDITY_SENSOR,
     CONF_USE_SEA_LEVEL,
     CONF_WIND_SENSOR,
     DOMAIN,
@@ -45,6 +46,8 @@ class ForecastData:
     p_6h: float | None = None
     p_12h: float | None = None
     wind_degrees: float | None = None
+    humidity: float | None = None
+    altitude: float | None = None
 
 
 class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
@@ -67,6 +70,9 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         self.wind_id = entry.options.get(CONF_WIND_SENSOR, entry.data.get(CONF_WIND_SENSOR))
         self.temp_id = entry.options.get(
             CONF_TEMPERATURE_SENSOR, entry.data.get(CONF_TEMPERATURE_SENSOR)
+        )
+        self.humidity_id = entry.options.get(
+            CONF_HUMIDITY_SENSOR, entry.data.get(CONF_HUMIDITY_SENSOR)
         )
         self.use_sea_level = entry.options.get(
             CONF_USE_SEA_LEVEL, entry.data.get(CONF_USE_SEA_LEVEL, False)
@@ -92,14 +98,16 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         p_now = self._correct_pressure(p_now_raw)
         history_raw = await self._fetch_history_pressures()
         wind = self._get_wind_direction()
+        humidity = self._get_humidity()
 
         _LOGGER.debug(
-            "Coordinator update: p_now=%.1f p_3h=%s p_6h=%s p_12h=%s wind=%s",
+            "Coordinator update: p_now=%.1f p_3h=%s p_6h=%s p_12h=%s wind=%s humidity=%s",
             p_now,
             history_raw.get(3),
             history_raw.get(6),
             history_raw.get(12),
             wind,
+            humidity,
         )
 
         return ForecastData(
@@ -109,6 +117,8 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             p_6h=self._correct_history_pressure(history_raw.get(6), p_now),
             p_12h=self._correct_history_pressure(history_raw.get(12), p_now),
             wind_degrees=wind,
+            humidity=humidity,
+            altitude=self.altitude,
         )
 
     def _get_temperature(self) -> float:
@@ -177,6 +187,20 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             return None
 
         state = self.hass.states.get(self.wind_id)
+        if not state or state.state in ("unknown", "unavailable"):
+            return None
+
+        try:
+            return float(state.state)
+        except ValueError:
+            return None
+
+    def _get_humidity(self) -> float | None:
+        """Вернуть относительную влажность в % или None."""
+        if not self.humidity_id:
+            return None
+
+        state = self.hass.states.get(self.humidity_id)
         if not state or state.state in ("unknown", "unavailable"):
             return None
 

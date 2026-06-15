@@ -1,50 +1,51 @@
 DOMAIN = "zambretti_sager"
 
-VERSION = "1.7.1"
+VERSION = "1.8.0"
 
 CONF_PRESSURE_SENSOR = "pressure_sensor"
 CONF_WIND_SENSOR = "wind_sensor"
 CONF_TEMPERATURE_SENSOR = "temperature_sensor"
+CONF_HUMIDITY_SENSOR = "humidity_sensor"
 CONF_LATITUDE = "latitude"
 CONF_LONGITUDE = "longitude"
 CONF_USE_SEA_LEVEL = "use_sea_level_correction"
 
 ZAMBRETTI_MAPPING = {
     # Falling
-    1: "Settled Fine",
-    2: "Fine Weather",
-    3: "Fine, Becoming Less Settled",
-    4: "Fairly Fine, Showery Later",
-    5: "Showery, Becoming More Unsettled",
-    6: "Unsettled, Rain Later",
-    7: "Rain at Times, Worse Later",
-    8: "Rain at Times, Becoming Very Unsettled",
-    9: "Very Unsettled, Rain",
+    1: "settled_fine",
+    2: "fine_weather",
+    3: "fine_becoming_less_settled",
+    4: "fairly_fine_showery_later",
+    5: "showery_becoming_more_unsettled",
+    6: "unsettled_rain_later",
+    7: "rain_at_times_worse_later",
+    8: "rain_at_times_becoming_very_unsettled",
+    9: "very_unsettled_rain",
     # Steady
-    10: "Settled Fine",
-    11: "Fine Weather",
-    12: "Fine, Possibly Showers",
-    13: "Fairly Fine, Showers Likely",
-    14: "Showery, Bright Intervals",
-    15: "Changeable, Some Rain",
-    16: "Unsettled, Rain at Times",
-    17: "Rain at Frequent Intervals",
-    18: "Very Unsettled, Rain",
-    19: "Stormy, Much Rain",
+    10: "settled_fine",
+    11: "fine_weather",
+    12: "fine_possibly_showers",
+    13: "fairly_fine_showers_likely",
+    14: "showery_bright_intervals",
+    15: "changeable_some_rain",
+    16: "unsettled_rain_at_times",
+    17: "rain_at_frequent_intervals",
+    18: "very_unsettled_rain",
+    19: "stormy_much_rain",
     # Rising
-    20: "Settled Fine",
-    21: "Fine Weather",
-    22: "Becoming Fine",
-    23: "Fairly Fine, Improving",
-    24: "Fairly Fine, Possibly Showers Early",
-    25: "Showery Early, Improving",
-    26: "Changeable, Mending",
-    27: "Rather Unsettled, Clearing Later",
-    28: "Unsettled, Probably Improving",
-    29: "Unsettled, Short Fine Intervals",
-    30: "Very Unsettled, Finer at Times",
-    31: "Stormy, Possibly Improving",
-    32: "Stormy, Much Rain"
+    20: "settled_fine",
+    21: "fine_weather",
+    22: "becoming_fine",
+    23: "fairly_fine_improving",
+    24: "fairly_fine_possibly_showers_early",
+    25: "showery_early_improving",
+    26: "changeable_mending",
+    27: "rather_unsettled_clearing_later",
+    28: "unsettled_probably_improving",
+    29: "unsettled_short_fine_intervals",
+    30: "very_unsettled_finer_at_times",
+    31: "stormy_possibly_improving",
+    32: "stormy_much_rain",
 }
 
 # Пороги тренда давления по алгоритму Sager (hPa за ~3 ч)
@@ -89,36 +90,36 @@ def calculate_sager_forecast(
     delta_hpa: float,
     wind_degrees: float | None = None,
 ) -> str:
-    """Упрощённый прогноз Sager по давлению, тренду и направлению ветра."""
+    """Упрощённый прогноз Sager — возвращает translation key."""
     trend = classify_pressure_trend(delta_hpa)
-    wind = wind_degrees_to_compass(wind_degrees)
 
     if pressure_hpa > 1020:
         if trend in ("rising_rapidly", "rising_slowly"):
-            forecast = "Fair, improving"
+            key = "sager_fair_improving"
         elif trend in ("falling_rapidly", "falling_slowly"):
-            forecast = "Fair now, tending to deteriorate"
+            key = "sager_fair_tending_to_deteriorate"
         else:
-            forecast = "Fair, no important change"
+            key = "sager_fair_no_change"
     elif pressure_hpa < 1005:
         if trend in ("falling_rapidly", "falling_slowly"):
-            forecast = "Unsettled, rain likely"
+            key = "sager_unsettled_rain_likely"
         elif trend in ("rising_rapidly", "rising_slowly"):
-            forecast = "Unsettled, probably improving"
+            key = "sager_unsettled_probably_improving"
         else:
-            forecast = "Unsettled, rain at times"
+            key = "sager_unsettled_rain_at_times"
     elif trend == "rising_rapidly":
-        forecast = "Changeable, becoming fairer"
+        key = "sager_changeable_becoming_fairer"
     elif trend == "falling_rapidly":
-        forecast = "Changeable, becoming more unsettled"
+        key = "sager_changeable_becoming_more_unsettled"
     elif trend == "rising_slowly":
-        forecast = "Variable, slowly improving"
+        key = "sager_variable_slowly_improving"
     elif trend == "falling_slowly":
-        forecast = "Variable, slowly deteriorating"
+        key = "sager_variable_slowly_deteriorating"
     else:
-        forecast = "Variable, some change expected"
+        key = "sager_variable_some_change"
 
+    # Добавляем ветер если есть
+    wind = wind_degrees_to_compass(wind_degrees)
     if wind:
-        forecast = f"{forecast}. {wind} winds expected"
-
-    return forecast
+        return f"{key}|{wind}"
+    return key

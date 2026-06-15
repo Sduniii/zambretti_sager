@@ -10,13 +10,14 @@ from .const import (
     CONF_PRESSURE_SENSOR,
     CONF_WIND_SENSOR,
     CONF_TEMPERATURE_SENSOR,
+    CONF_HUMIDITY_SENSOR,
     CONF_LATITUDE,
     CONF_LONGITUDE,
     CONF_USE_SEA_LEVEL,
 )
 
 CONF_LOCATION = "location"
-OPTIONAL_ENTITY_KEYS = (CONF_WIND_SENSOR, CONF_TEMPERATURE_SENSOR)
+OPTIONAL_ENTITY_KEYS = (CONF_WIND_SENSOR, CONF_TEMPERATURE_SENSOR, CONF_HUMIDITY_SENSOR)
 
 PRESSURE_SENSOR_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
@@ -36,6 +37,13 @@ TEMPERATURE_SENSOR_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
         domain="sensor",
         device_class="temperature",
+    )
+)
+
+HUMIDITY_SENSOR_SELECTOR = selector.EntitySelector(
+    selector.EntitySelectorConfig(
+        domain="sensor",
+        device_class="humidity",
     )
 )
 
@@ -82,6 +90,7 @@ class ZambrettiSagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_PRESSURE_SENSOR): PRESSURE_SENSOR_SELECTOR,
                 vol.Optional(CONF_WIND_SENSOR): WIND_SENSOR_SELECTOR,
                 vol.Optional(CONF_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SELECTOR,
+                vol.Optional(CONF_HUMIDITY_SENSOR): HUMIDITY_SENSOR_SELECTOR,
                 vol.Optional(CONF_USE_SEA_LEVEL, default=False): selector.BooleanSelector(),
                 vol.Optional(CONF_LOCATION, default=default_location): selector.LocationSelector(
                     selector.LocationSelectorConfig(radius=False, icon="mdi:map-marker")
@@ -109,6 +118,7 @@ class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
         current_pressure = entry.options.get(CONF_PRESSURE_SENSOR) or entry.data.get(CONF_PRESSURE_SENSOR)
         current_wind = entry.options.get(CONF_WIND_SENSOR) or entry.data.get(CONF_WIND_SENSOR)
         current_temp = entry.options.get(CONF_TEMPERATURE_SENSOR) or entry.data.get(CONF_TEMPERATURE_SENSOR)
+        current_humidity = entry.options.get(CONF_HUMIDITY_SENSOR) or entry.data.get(CONF_HUMIDITY_SENSOR)
         current_use_sea_level = (
             entry.options.get(CONF_USE_SEA_LEVEL)
             if CONF_USE_SEA_LEVEL in entry.options
@@ -143,6 +153,11 @@ class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
             schema_dict[vol.Optional(CONF_TEMPERATURE_SENSOR, default=current_temp)] = TEMPERATURE_SENSOR_SELECTOR
         else:
             schema_dict[vol.Optional(CONF_TEMPERATURE_SENSOR)] = TEMPERATURE_SENSOR_SELECTOR
+
+        if current_humidity:
+            schema_dict[vol.Optional(CONF_HUMIDITY_SENSOR, default=current_humidity)] = HUMIDITY_SENSOR_SELECTOR
+        else:
+            schema_dict[vol.Optional(CONF_HUMIDITY_SENSOR)] = HUMIDITY_SENSOR_SELECTOR
 
         schema_dict[vol.Optional(CONF_USE_SEA_LEVEL, default=current_use_sea_level)] = selector.BooleanSelector()
         schema_dict[vol.Optional(CONF_LOCATION, default=default_location)] = selector.LocationSelector(

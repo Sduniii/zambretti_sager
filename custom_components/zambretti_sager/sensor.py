@@ -10,6 +10,8 @@ from .const import (
     VERSION,
     ZAMBRETTI_MAPPING,
     calculate_sager_forecast,
+    classify_pressure_trend,
+    wind_degrees_to_compass,
 )
 from .coordinator import ForecastData, ZambrettiSagerCoordinator
 
@@ -28,6 +30,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
     ])
 
 
+def _trend_label(delta: float) -> str:
+    """Текстовый тренд для атрибутов."""
+    trend = classify_pressure_trend(delta)
+    return {
+        "rising_rapidly": "↑↑ Rising Fast",
+        "rising_slowly":  "↑ Rising",
+        "steady":         "→ Steady",
+        "falling_slowly": "↓ Falling",
+        "falling_rapidly":"↓↓ Falling Fast",
+    }.get(trend, "→ Steady")
+
+
 class WeatherSensorBase(CoordinatorEntity, SensorEntity):
     """Базовый класс сенсоров прогноза."""
 
@@ -40,6 +54,7 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
             model="Software Forecaster",
             sw_version=VERSION,
         )
+        self._attr_has_entity_name = True
 
     @property
     def data(self) -> ForecastData | None:
@@ -47,7 +62,6 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        """Доступен если координатор получил данные и они валидны."""
         d = self.data
         return d is not None and d.available
 
@@ -62,6 +76,23 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
             z = round(144 - 0.13 * p_now)
         return max(1, min(z, 32))
 
+    def _base_attrs(self, delta: float) -> dict:
+        """Общие атрибуты для всех сенсоров прогноза."""
+        d = self.data
+        attrs: dict = {}
+        if d and d.p_now is not None:
+            attrs["pressure_hpa"] = round(d.p_now, 1)
+            attrs["pressure_delta_3h"] = round(d.p_now - d.p_3h, 2) if d.p_3h else None
+            attrs["trend"] = _trend_label(delta)
+        if d and d.altitude is not None:
+            attrs["altitude_m"] = round(d.altitude, 1)
+        if d and d.humidity is not None:
+            attrs["humidity_%"] = round(d.humidity, 1)
+        if d and d.wind_degrees is not None:
+            attrs["wind_direction"] = wind_degrees_to_compass(d.wind_degrees)
+            attrs["wind_degrees"] = round(d.wind_degrees, 1)
+        return attrs
+
 
 class ZambrettiSensor(WeatherSensorBase):
     """Текущий прогноз Замбретти на основе тренда за 3 часа."""
@@ -70,6 +101,7 @@ class ZambrettiSensor(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti"
+        self._attr_translation_key = "zambretti_forecast"
         self.entity_id = "sensor.zambretti_forecast"
 
     @property
@@ -78,7 +110,15 @@ class ZambrettiSensor(WeatherSensorBase):
         if not d or not d.available or d.p_now is None or d.p_3h is None:
             return None
         delta = d.p_now - d.p_3h
-        return ZAMBRETTI_MAPPING.get(self._zambretti_index(d.p_now, delta), "Stable")
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(d.p_now, delta), "stable")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        d = self.data
+        if not d or d.p_now is None or d.p_3h is None:
+            return {}
+        delta = d.p_now - d.p_3h
+        return self._base_attrs(delta)
 
 
 class SagerSensor(WeatherSensorBase):
@@ -88,6 +128,7 @@ class SagerSensor(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Sager Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_sager"
+        self._attr_translation_key = "sager_forecast"
         self.entity_id = "sensor.sager_forecast"
 
     @property
@@ -98,6 +139,14 @@ class SagerSensor(WeatherSensorBase):
         delta = d.p_now - d.p_3h
         return calculate_sager_forecast(d.p_now, delta, d.wind_degrees)
 
+    @property
+    def extra_state_attributes(self) -> dict:
+        d = self.data
+        if not d or d.p_now is None or d.p_3h is None:
+            return {}
+        delta = d.p_now - d.p_3h
+        return self._base_attrs(delta)
+
 
 class ZambrettiForecast6h(WeatherSensorBase):
     """Прогноз на 6 ч: тренд за 3 ч × 2."""
@@ -106,6 +155,7 @@ class ZambrettiForecast6h(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast 6h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_6h"
+        self._attr_translation_key = "zambretti_forecast"
         self._attr_icon = "mdi:weather-partly-cloudy"
         self.entity_id = "sensor.zambretti_forecast_6h"
 
@@ -116,7 +166,17 @@ class ZambrettiForecast6h(WeatherSensorBase):
             return None
         delta_6h = (d.p_now - d.p_3h) * 2
         predicted = d.p_now + delta_6h
-        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_6h), "Stable")
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_6h), "stable")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        d = self.data
+        if not d or d.p_now is None or d.p_3h is None:
+            return {}
+        delta_6h = (d.p_now - d.p_3h) * 2
+        attrs = self._base_attrs(delta_6h)
+        attrs["predicted_pressure_hpa"] = round(d.p_now + delta_6h, 1)
+        return attrs
 
 
 class ZambrettiForecast12h(WeatherSensorBase):
@@ -126,6 +186,7 @@ class ZambrettiForecast12h(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast 12h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_12h"
+        self._attr_translation_key = "zambretti_forecast"
         self._attr_icon = "mdi:weather-cloudy"
         self.entity_id = "sensor.zambretti_forecast_12h"
 
@@ -136,7 +197,17 @@ class ZambrettiForecast12h(WeatherSensorBase):
             return None
         delta_12h = (d.p_now - d.p_6h) * 2
         predicted = d.p_now + delta_12h
-        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_12h), "Stable")
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_12h), "stable")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        d = self.data
+        if not d or d.p_now is None or d.p_6h is None:
+            return {}
+        delta_12h = (d.p_now - d.p_6h) * 2
+        attrs = self._base_attrs(delta_12h)
+        attrs["predicted_pressure_hpa"] = round(d.p_now + delta_12h, 1)
+        return attrs
 
 
 class ZambrettiForecast24h(WeatherSensorBase):
@@ -146,6 +217,7 @@ class ZambrettiForecast24h(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast 24h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_24h"
+        self._attr_translation_key = "zambretti_forecast"
         self._attr_icon = "mdi:weather-sunset"
         self.entity_id = "sensor.zambretti_forecast_24h"
 
@@ -156,11 +228,21 @@ class ZambrettiForecast24h(WeatherSensorBase):
             return None
         delta_24h = (d.p_now - d.p_12h) * 2
         predicted = d.p_now + delta_24h
-        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_24h), "Stable")
+        return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_24h), "stable")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        d = self.data
+        if not d or d.p_now is None or d.p_12h is None:
+            return {}
+        delta_24h = (d.p_now - d.p_12h) * 2
+        attrs = self._base_attrs(delta_24h)
+        attrs["predicted_pressure_hpa"] = round(d.p_now + delta_24h, 1)
+        return attrs
 
 
 class PrecipitationProbability(WeatherSensorBase):
-    """Вероятность осадков на основе давления и тренда за 3 часа."""
+    """Вероятность осадков на основе давления, тренда и влажности."""
 
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
@@ -193,4 +275,22 @@ class PrecipitationProbability(WeatherSensorBase):
         elif delta > 1.6:      trend_modifier = -15
         else:                  trend_modifier = 0
 
-        return round(max(0, min(100, base_prob + trend_modifier)))
+        # Влажность: высокая влажность увеличивает вероятность осадков
+        humidity_modifier = 0
+        if d.humidity is not None:
+            if d.humidity >= 90:    humidity_modifier = 15
+            elif d.humidity >= 80:  humidity_modifier = 10
+            elif d.humidity >= 70:  humidity_modifier = 5
+            elif d.humidity <= 40:  humidity_modifier = -10
+            elif d.humidity <= 30:  humidity_modifier = -15
+
+        return round(max(0, min(100, base_prob + trend_modifier + humidity_modifier)))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        d = self.data
+        if not d or d.p_now is None or d.p_3h is None:
+            return {}
+        delta = d.p_now - d.p_3h
+        attrs = self._base_attrs(delta)
+        return attrs
