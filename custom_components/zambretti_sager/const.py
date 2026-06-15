@@ -90,36 +90,30 @@ def calculate_sager_forecast(
     delta_hpa: float,
     wind_degrees: float | None = None,
 ) -> str:
-    """Упрощённый прогноз Sager — возвращает translation key."""
+    """Упрощённый прогноз Sager — возвращает translation key (без ветра)."""
     trend = classify_pressure_trend(delta_hpa)
 
     if pressure_hpa > 1020:
         if trend in ("rising_rapidly", "rising_slowly"):
-            key = "sager_fair_improving"
+            return "sager_fair_improving"
         elif trend in ("falling_rapidly", "falling_slowly"):
-            key = "sager_fair_tending_to_deteriorate"
+            return "sager_fair_tending_to_deteriorate"
         else:
-            key = "sager_fair_no_change"
+            return "sager_fair_no_change"
     elif pressure_hpa < 1005:
         if trend in ("falling_rapidly", "falling_slowly"):
-            key = "sager_unsettled_rain_likely"
+            return "sager_unsettled_rain_likely"
         elif trend in ("rising_rapidly", "rising_slowly"):
-            key = "sager_unsettled_probably_improving"
+            return "sager_unsettled_probably_improving"
         else:
-            key = "sager_unsettled_rain_at_times"
+            return "sager_unsettled_rain_at_times"
     elif trend == "rising_rapidly":
-        key = "sager_changeable_becoming_fairer"
+        return "sager_changeable_becoming_fairer"
     elif trend == "falling_rapidly":
-        key = "sager_changeable_becoming_more_unsettled"
+        return "sager_changeable_becoming_more_unsettled"
     elif trend == "rising_slowly":
-        key = "sager_variable_slowly_improving"
+        return "sager_variable_slowly_improving"
     elif trend == "falling_slowly":
-        key = "sager_variable_slowly_deteriorating"
+        return "sager_variable_slowly_deteriorating"
     else:
-        key = "sager_variable_some_change"
-
-    # Добавляем ветер если есть
-    wind = wind_degrees_to_compass(wind_degrees)
-    if wind:
-        return f"{key}|{wind}"
-    return key
+        return "sager_variable_some_change"
