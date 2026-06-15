@@ -10,6 +10,7 @@ from .const import (
 )
 from .coordinator import ForecastData, ZambrettiSagerCoordinator
 
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Настройка сенсоров."""
     coordinator: ZambrettiSagerCoordinator = hass.data[DOMAIN][entry.entry_id]
@@ -53,9 +54,20 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
             z = round(144 - 0.13 * p_now)
         return max(1, min(z, 32))
 
-    def _set_unavailable(self) -> None:
-        """Пометить сенсор недоступным."""
-        self._attr_available = False
+    def _handle_coordinator_update(self) -> None:
+        """Вызывается CoordinatorEntity при каждом обновлении координатора.
+        Подклассы переопределяют _update_from_data и не трогают этот метод.
+        """
+        data = self._data
+        if not data or not data.available:
+            self._attr_available = False
+        else:
+            self._update_from_data(data)
+        self.async_write_ha_state()
+
+    def _update_from_data(self, data: ForecastData) -> None:
+        """Переопределить в подклассе для обновления _attr_native_value."""
+        raise NotImplementedError
 
 
 class ZambrettiSensor(WeatherSensorBase):
@@ -66,17 +78,14 @@ class ZambrettiSensor(WeatherSensorBase):
         self._attr_name = "Zambretti Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
+    def _update_from_data(self, data: ForecastData) -> None:
+        if data.p_now is None or data.p_3h is None:
+            self._attr_available = False
             return
-
         delta = data.p_now - data.p_3h
         self._attr_available = True
         self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(data.p_now, delta),
-            "Stable",
+            self._zambretti_index(data.p_now, delta), "Stable"
         )
 
 
@@ -88,18 +97,14 @@ class SagerSensor(WeatherSensorBase):
         self._attr_name = "Sager Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_sager"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
+    def _update_from_data(self, data: ForecastData) -> None:
+        if data.p_now is None or data.p_3h is None:
+            self._attr_available = False
             return
-
         delta = data.p_now - data.p_3h
         self._attr_available = True
         self._attr_native_value = calculate_sager_forecast(
-            data.p_now,
-            delta,
-            data.wind_degrees,
+            data.p_now, delta, data.wind_degrees
         )
 
 
@@ -112,18 +117,15 @@ class ZambrettiForecast6h(WeatherSensorBase):
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_6h"
         self._attr_icon = "mdi:weather-partly-cloudy"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
+    def _update_from_data(self, data: ForecastData) -> None:
+        if data.p_now is None or data.p_3h is None:
+            self._attr_available = False
             return
-
         delta_6h = (data.p_now - data.p_3h) * 2
         predicted = data.p_now + delta_6h
         self._attr_available = True
         self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(predicted, delta_6h),
-            "Stable",
+            self._zambretti_index(predicted, delta_6h), "Stable"
         )
 
 
@@ -136,18 +138,15 @@ class ZambrettiForecast12h(WeatherSensorBase):
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_12h"
         self._attr_icon = "mdi:weather-cloudy"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_6h is None:
-            self._set_unavailable()
+    def _update_from_data(self, data: ForecastData) -> None:
+        if data.p_now is None or data.p_6h is None:
+            self._attr_available = False
             return
-
         delta_12h = (data.p_now - data.p_6h) * 2
         predicted = data.p_now + delta_12h
         self._attr_available = True
         self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(predicted, delta_12h),
-            "Stable",
+            self._zambretti_index(predicted, delta_12h), "Stable"
         )
 
 
@@ -160,18 +159,15 @@ class ZambrettiForecast24h(WeatherSensorBase):
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_24h"
         self._attr_icon = "mdi:weather-sunset"
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_12h is None:
-            self._set_unavailable()
+    def _update_from_data(self, data: ForecastData) -> None:
+        if data.p_now is None or data.p_12h is None:
+            self._attr_available = False
             return
-
         delta_24h = (data.p_now - data.p_12h) * 2
         predicted = data.p_now + delta_24h
         self._attr_available = True
         self._attr_native_value = ZAMBRETTI_MAPPING.get(
-            self._zambretti_index(predicted, delta_24h),
-            "Stable",
+            self._zambretti_index(predicted, delta_24h), "Stable"
         )
 
 
@@ -186,38 +182,26 @@ class PrecipitationProbability(WeatherSensorBase):
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
-    def _handle_coordinator_update(self) -> None:
-        data = self._data
-        if not data or not data.available or data.p_now is None or data.p_3h is None:
-            self._set_unavailable()
+    def _update_from_data(self, data: ForecastData) -> None:
+        if data.p_now is None or data.p_3h is None:
+            self._attr_available = False
             return
 
         delta = data.p_now - data.p_3h
         p_now = data.p_now
 
-        if p_now < 1000:
-            base_prob = 90
-        elif p_now < 1005:
-            base_prob = 70
-        elif p_now < 1010:
-            base_prob = 50
-        elif p_now < 1015:
-            base_prob = 30
-        elif p_now < 1020:
-            base_prob = 15
-        else:
-            base_prob = 5
+        if p_now < 1000:       base_prob = 90
+        elif p_now < 1005:     base_prob = 70
+        elif p_now < 1010:     base_prob = 50
+        elif p_now < 1015:     base_prob = 30
+        elif p_now < 1020:     base_prob = 15
+        else:                  base_prob = 5
 
-        if delta < -3.0:
-            trend_modifier = 30
-        elif delta < -1.6:
-            trend_modifier = 15
-        elif delta > 3.0:
-            trend_modifier = -30
-        elif delta > 1.6:
-            trend_modifier = -15
-        else:
-            trend_modifier = 0
+        if delta < -3.0:       trend_modifier = 30
+        elif delta < -1.6:     trend_modifier = 15
+        elif delta > 3.0:      trend_modifier = -30
+        elif delta > 1.6:      trend_modifier = -15
+        else:                  trend_modifier = 0
 
         self._attr_available = True
         self._attr_native_value = round(max(0, min(100, base_prob + trend_modifier)))

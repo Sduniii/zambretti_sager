@@ -6,8 +6,9 @@ import asyncio
 import datetime
 import logging
 from dataclasses import dataclass
-from .pressure_util import parse_pressure_hpa
+
 from homeassistant.components.recorder import get_instance, history
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -24,6 +25,7 @@ from .const import (
 from .pressure_util import (
     calculate_sea_level_pressure,
     get_elevation,
+    parse_pressure_hpa,
     parse_pressure_hpa_from_history,
 )
 
