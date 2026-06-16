@@ -8,6 +8,7 @@ import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, EVENT_HOMEASSISTANT_STARTED, HomeAssistant
+from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN, VERSION
 from .coordinator import async_create_coordinator
@@ -16,6 +17,8 @@ from .frontend import JSModuleRegistration
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[str] = ["sensor"]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 # ── WebSocket: version endpoint (для проверки совпадения версий) ──────────

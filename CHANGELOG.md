@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.4] — 2026-06-16
+
+### Fixed
+- **hassfest validation errors** — two issues reported by the HA CI pipeline:
+  - Added `lovelace` to `dependencies` in `manifest.json` (required when using the lovelace/frontend card registration)
+  - Added `CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)` in `__init__.py` (required when `async_setup` is defined but the integration has no YAML configuration)
+
+---
+
 ## [1.9.3] — 2026-06-16
 
 ### Fixed
