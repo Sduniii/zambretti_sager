@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1] — 2026-06-16
+
+### Fixed
+- **Sensors unavailable after fresh install** — all sensors now show a value immediately after setup, without waiting for pressure history to accumulate. When history is not yet available, delta is treated as 0 (steady trend). Extended forecasts (6h/12h/24h) use the best available history window and scale accordingly.
+
+---
+
 ## [1.9.0] — 2026-06-16
 
 ### Changed

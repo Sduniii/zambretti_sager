@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.0
+ * Zambretti & Sager Weather Card  v1.9.1
  * Lovelace custom card for Home Assistant
  */
 

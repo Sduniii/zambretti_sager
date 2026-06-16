@@ -107,17 +107,20 @@ class ZambrettiSensor(WeatherSensorBase):
     @property
     def native_value(self) -> str | None:
         d = self.data
-        if not d or not d.available or d.p_now is None or d.p_3h is None:
+        if not d or not d.available or d.p_now is None:
             return None
-        delta = d.p_now - d.p_3h
+        # Use p_3h if available, otherwise assume steady trend (delta=0)
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta = d.p_now - p_3h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(d.p_now, delta), "stable")
 
     @property
     def extra_state_attributes(self) -> dict:
         d = self.data
-        if not d or d.p_now is None or d.p_3h is None:
+        if not d or d.p_now is None:
             return {}
-        delta = d.p_now - d.p_3h
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta = d.p_now - p_3h
         return self._base_attrs(delta)
 
 
@@ -134,17 +137,19 @@ class SagerSensor(WeatherSensorBase):
     @property
     def native_value(self) -> str | None:
         d = self.data
-        if not d or not d.available or d.p_now is None or d.p_3h is None:
+        if not d or not d.available or d.p_now is None:
             return None
-        delta = d.p_now - d.p_3h
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta = d.p_now - p_3h
         return calculate_sager_forecast(d.p_now, delta, d.wind_degrees)
 
     @property
     def extra_state_attributes(self) -> dict:
         d = self.data
-        if not d or d.p_now is None or d.p_3h is None:
+        if not d or d.p_now is None:
             return {}
-        delta = d.p_now - d.p_3h
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta = d.p_now - p_3h
         return self._base_attrs(delta)
 
 
@@ -162,18 +167,20 @@ class ZambrettiForecast6h(WeatherSensorBase):
     @property
     def native_value(self) -> str | None:
         d = self.data
-        if not d or not d.available or d.p_now is None or d.p_3h is None:
+        if not d or not d.available or d.p_now is None:
             return None
-        delta_6h = (d.p_now - d.p_3h) * 2
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta_6h = (d.p_now - p_3h) * 2
         predicted = d.p_now + delta_6h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_6h), "stable")
 
     @property
     def extra_state_attributes(self) -> dict:
         d = self.data
-        if not d or d.p_now is None or d.p_3h is None:
+        if not d or d.p_now is None:
             return {}
-        delta_6h = (d.p_now - d.p_3h) * 2
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta_6h = (d.p_now - p_3h) * 2
         attrs = self._base_attrs(delta_6h)
         attrs["predicted_pressure_hpa"] = round(d.p_now + delta_6h, 1)
         return attrs
@@ -193,18 +200,23 @@ class ZambrettiForecast12h(WeatherSensorBase):
     @property
     def native_value(self) -> str | None:
         d = self.data
-        if not d or not d.available or d.p_now is None or d.p_6h is None:
+        if not d or not d.available or d.p_now is None:
             return None
-        delta_12h = (d.p_now - d.p_6h) * 2
+        # Use 6h history if available, else fall back to 3h, else steady
+        p_ref = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
+        hours = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
+        delta_12h = (d.p_now - p_ref) / hours * 12
         predicted = d.p_now + delta_12h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_12h), "stable")
 
     @property
     def extra_state_attributes(self) -> dict:
         d = self.data
-        if not d or d.p_now is None or d.p_6h is None:
+        if not d or d.p_now is None:
             return {}
-        delta_12h = (d.p_now - d.p_6h) * 2
+        p_ref = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
+        hours = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
+        delta_12h = (d.p_now - p_ref) / hours * 12
         attrs = self._base_attrs(delta_12h)
         attrs["predicted_pressure_hpa"] = round(d.p_now + delta_12h, 1)
         return attrs
@@ -224,18 +236,31 @@ class ZambrettiForecast24h(WeatherSensorBase):
     @property
     def native_value(self) -> str | None:
         d = self.data
-        if not d or not d.available or d.p_now is None or d.p_12h is None:
+        if not d or not d.available or d.p_now is None:
             return None
-        delta_24h = (d.p_now - d.p_12h) * 2
+        # Use 12h history if available, else best available, else steady
+        p_ref = d.p_12h if d.p_12h is not None else (
+                d.p_6h  if d.p_6h  is not None else (
+                d.p_3h  if d.p_3h  is not None else d.p_now))
+        hours = (12 if d.p_12h is not None else
+                  6 if d.p_6h  is not None else
+                  3 if d.p_3h  is not None else 1)
+        delta_24h = (d.p_now - p_ref) / hours * 24
         predicted = d.p_now + delta_24h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_24h), "stable")
 
     @property
     def extra_state_attributes(self) -> dict:
         d = self.data
-        if not d or d.p_now is None or d.p_12h is None:
+        if not d or d.p_now is None:
             return {}
-        delta_24h = (d.p_now - d.p_12h) * 2
+        p_ref = d.p_12h if d.p_12h is not None else (
+                d.p_6h  if d.p_6h  is not None else (
+                d.p_3h  if d.p_3h  is not None else d.p_now))
+        hours = (12 if d.p_12h is not None else
+                  6 if d.p_6h  is not None else
+                  3 if d.p_3h  is not None else 1)
+        delta_24h = (d.p_now - p_ref) / hours * 24
         attrs = self._base_attrs(delta_24h)
         attrs["predicted_pressure_hpa"] = round(d.p_now + delta_24h, 1)
         return attrs
@@ -256,10 +281,11 @@ class PrecipitationProbability(WeatherSensorBase):
     @property
     def native_value(self) -> int | None:
         d = self.data
-        if not d or not d.available or d.p_now is None or d.p_3h is None:
+        if not d or not d.available or d.p_now is None:
             return None
 
-        delta = d.p_now - d.p_3h
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta = d.p_now - p_3h
         p_now = d.p_now
 
         if p_now < 1000:       base_prob = 90
@@ -289,8 +315,9 @@ class PrecipitationProbability(WeatherSensorBase):
     @property
     def extra_state_attributes(self) -> dict:
         d = self.data
-        if not d or d.p_now is None or d.p_3h is None:
+        if not d or d.p_now is None:
             return {}
-        delta = d.p_now - d.p_3h
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta = d.p_now - p_3h
         attrs = self._base_attrs(delta)
         return attrs
