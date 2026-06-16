@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.3] — 2026-06-16
+
+### Fixed
+- **Card language setting now translates forecast text** — previously, sensors had `_attr_translation_key` set, which caused HA to translate state values via `translations/en.json` before the card reads them. So `hass.states[...].state` returned already-translated text like `"Settled Fine"` instead of the raw key `"settled_fine"`, making the card unable to look it up in `LABELS_RU`. Removed `_attr_translation_key` from all forecast sensors — they now always return raw keys, and the card handles all translation itself based on the card's language setting.
+
+---
+
 ## [1.9.2] — 2026-06-16
 
 ### Fixed

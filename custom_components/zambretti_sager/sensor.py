@@ -101,7 +101,6 @@ class ZambrettiSensor(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti"
-        self._attr_translation_key = "zambretti_forecast"
         self.entity_id = "sensor.zambretti_forecast"
 
     @property
@@ -131,7 +130,6 @@ class SagerSensor(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Sager Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_sager"
-        self._attr_translation_key = "sager_forecast"
         self.entity_id = "sensor.sager_forecast"
 
     @property
@@ -160,7 +158,6 @@ class ZambrettiForecast6h(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast 6h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_6h"
-        self._attr_translation_key = "zambretti_forecast"
         self._attr_icon = "mdi:weather-partly-cloudy"
         self.entity_id = "sensor.zambretti_forecast_6h"
 
@@ -193,7 +190,6 @@ class ZambrettiForecast12h(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast 12h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_12h"
-        self._attr_translation_key = "zambretti_forecast"
         self._attr_icon = "mdi:weather-cloudy"
         self.entity_id = "sensor.zambretti_forecast_12h"
 
@@ -229,7 +225,6 @@ class ZambrettiForecast24h(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast 24h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_24h"
-        self._attr_translation_key = "zambretti_forecast"
         self._attr_icon = "mdi:weather-sunset"
         self.entity_id = "sensor.zambretti_forecast_24h"
 
