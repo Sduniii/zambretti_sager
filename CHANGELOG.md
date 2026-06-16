@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2] — 2026-06-16
+
+### Fixed
+- **Sensors stay unavailable after HA restart** — root cause was that HA loads integrations before all sensor states are restored. The coordinator now subscribes to state-change events on the pressure sensor and triggers a refresh the moment it becomes available, instead of waiting up to 5 minutes for the next scheduled poll.
+
+---
+
 ## [1.9.1] — 2026-06-16
 
 ### Fixed

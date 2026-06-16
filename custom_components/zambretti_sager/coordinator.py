@@ -9,7 +9,8 @@ from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.recorder import get_instance, history
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -63,6 +64,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         self.entry = entry
         self.altitude = altitude
         self._sea_level_warning_logged = False
+        self._unsub_state_listener = None
 
         self.pressure_id = entry.options.get(
             CONF_PRESSURE_SENSOR, entry.data[CONF_PRESSURE_SENSOR]
@@ -78,16 +80,50 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             CONF_USE_SEA_LEVEL, entry.data.get(CONF_USE_SEA_LEVEL, False)
         )
 
+    def _start_pressure_watcher(self) -> None:
+        """Подписаться на изменения датчика давления.
+
+        Если при старте датчик ещё unavailable/unknown, мы не ждём 5 минут —
+        сразу триггерим обновление координатора как только он становится доступен.
+        """
+        if self._unsub_state_listener:
+            return  # уже подписаны
+
+        @callback
+        def _on_pressure_state_change(event) -> None:
+            new_state = event.data.get("new_state")
+            if new_state and new_state.state not in ("unknown", "unavailable", None):
+                _LOGGER.debug(
+                    "Pressure sensor %s became available (%s), triggering update",
+                    self.pressure_id,
+                    new_state.state,
+                )
+                self.hass.async_create_task(self.async_refresh())
+
+        self._unsub_state_listener = async_track_state_change_event(
+            self.hass, [self.pressure_id], _on_pressure_state_change
+        )
+
+    def _stop_pressure_watcher(self) -> None:
+        if self._unsub_state_listener:
+            self._unsub_state_listener()
+            self._unsub_state_listener = None
+
     async def _async_update_data(self) -> ForecastData:
         """Прочитать текущее давление, историю и ветер."""
         pressure_state = self.hass.states.get(self.pressure_id)
         if not pressure_state or pressure_state.state in ("unknown", "unavailable"):
             _LOGGER.debug(
-                "Pressure sensor %s not ready yet (state: %s)",
+                "Pressure sensor %s not ready yet (state: %s), waiting for state change",
                 self.pressure_id,
                 pressure_state.state if pressure_state else "not found",
             )
+            # Watch for when the sensor becomes available so we don't wait 5 min
+            self._start_pressure_watcher()
             return ForecastData(available=False)
+
+        # Sensor is available — no need to watch anymore
+        self._stop_pressure_watcher()
 
         try:
             p_now_raw = parse_pressure_hpa(pressure_state)
