@@ -1,6 +1,19 @@
+from typing import Final
+
 DOMAIN = "zambretti_sager"
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
+
+# Frontend
+URL_BASE: Final[str] = "/zambretti_sager_card"
+
+JSMODULES: Final[list[dict[str, str]]] = [
+    {
+        "name": "Zambretti Weather Card",
+        "filename": "zambretti-weather-card.js",
+        "version": VERSION,
+    },
+]
 
 CONF_PRESSURE_SENSOR = "pressure_sensor"
 CONF_WIND_SENSOR = "wind_sensor"

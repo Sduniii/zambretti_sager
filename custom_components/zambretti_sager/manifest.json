@@ -3,10 +3,10 @@
   "name": "Zambretti and Sager",
   "codeowners": ["@ziffmafiya"],
   "config_flow": true,
-  "dependencies": ["recorder"],
+  "dependencies": ["recorder", "frontend", "http"],
   "documentation": "https://github.com/ziffmafiya/zambretti_sager",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/ziffmafiya/zambretti_sager/issues",
   "requirements": [],
-  "version": "1.8.0"
+  "version": "1.9.0"
 }

@@ -1,19 +1,18 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.9.0-blue.svg)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
 <img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png" alt="Zambretti & Sager Logo" width="400">
 
-## 🎉 What's New in v1.7.0
+## 🎉 What's New in v1.9.0
 
-- **Sager forecast fix** — now uses pressure trend and wind direction (not just static pressure thresholds)
-- **Pressure unit conversion** — supports Pa, inHg, mmHg and other units automatically
-- **Smarter sea level correction** — avoids double-correcting sensors that already report sea level pressure
-- **Unavailable handling** — sensors correctly go unavailable when pressure data is missing
-- **Config flow** — prevents duplicate setups for the same pressure sensor
+- **Sunny theme** — warm orange gradient for sunny conditions (like iOS Weather app), instead of blue
+- **Custom card background** — new toggle in card settings: when disabled, you can pick any background color or CSS gradient for the card
+- **Live color preview** — color picker updates the card in real time without closing the picker
+- **Compact mode removed** — simplified card editor
 
 ## Previous: v1.4.0
 

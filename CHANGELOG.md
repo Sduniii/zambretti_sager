@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.9.0] — 2026-06-16
+
+### Changed
+- **Sunny condition** — warm orange gradient (`#C65A00 → #F2820A → #FFAA33 → #FFD580`) instead of blue, matching iOS Weather app style
+- **Card editor** — removed Compact mode toggle (simplified UI)
+
+### Added
+- **Auto theme toggle** — new switch in card settings; when enabled (default) the background follows the weather condition automatically; when disabled the user can set a custom background
+- **Custom background picker** — color swatch opens a native color picker with live preview; text field accepts any CSS value (`#hex`, `linear-gradient(...)`, etc.)
+- **Live preview** — background color updates the card in real time while the picker is open, without closing it (uses `window` custom event bridge across shadow DOM)
+
+---
+
 ## [1.7.1] — 2026-06-15
 
 ### Fixed

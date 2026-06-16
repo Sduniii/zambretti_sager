@@ -46,3 +46,26 @@ Six sensors are created automatically and grouped under one device.
 - Barometric pressure sensor (hPa)
 - Wind direction sensor (degrees, optional but recommended for Sager)
 - Temperature sensor (optional, for altitude correction)
+
+## Custom Lovelace Card
+
+An iOS-style weather widget card is **included and registered automatically** — no manual resource setup needed.
+
+After installing the integration via HACS and restarting Home Assistant, just add the card to any dashboard:
+
+```yaml
+type: custom:zambretti-weather-card
+```
+
+That's it. All entity IDs use defaults (`sensor.zambretti_forecast`, etc.). Override them only if you renamed the entities:
+
+```yaml
+type: custom:zambretti-weather-card
+entity_zambretti: sensor.zambretti_forecast
+entity_sager: sensor.sager_forecast
+entity_6h: sensor.zambretti_forecast_6h
+entity_12h: sensor.zambretti_forecast_12h
+entity_24h: sensor.zambretti_forecast_24h
+entity_precip: sensor.precipitation_probability
+language: auto   # "en" | "ru" | "auto"
+```
