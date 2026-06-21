@@ -17,6 +17,7 @@ JSMODULES: Final[list[dict[str, str]]] = [
 
 CONF_PRESSURE_SENSOR = "pressure_sensor"
 CONF_WIND_SENSOR = "wind_sensor"
+CONF_WIND_SPEED_SENSOR = "wind_speed_sensor"
 CONF_TEMPERATURE_SENSOR = "temperature_sensor"
 CONF_HUMIDITY_SENSOR = "humidity_sensor"
 CONF_LATITUDE = "latitude"

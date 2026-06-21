@@ -90,28 +90,50 @@ const WEATHER_ICONS = {
         <line x1="19.3" y1="44.7" x2="14.9" y2="49.1"/>
       </g>
     </g></svg>`,
+  night_clear:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <path d="M38 12a22 22 0 1 1-22 22 22 22 0 0 1 22-22z" fill="#F5F5DC" opacity="0.9">
+      <animate attributeName="opacity" values="0.85;1;0.85" dur="4s" repeatCount="indefinite"/>
+    </path>
+    <circle cx="42" cy="18" r="2" fill="#FFF" opacity="0.4"><animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" repeatCount="indefinite"/></circle>
+    <circle cx="12" cy="14" r="1.2" fill="#FFF" opacity="0.3"><animate attributeName="opacity" values="0.2;0.5;0.2" dur="2.5s" repeatCount="indefinite"/></circle>
+    <circle cx="50" cy="10" r="1" fill="#FFF" opacity="0.35"><animate attributeName="opacity" values="0.2;0.5;0.2" dur="4s" repeatCount="indefinite"/></circle>
+    <circle cx="16" cy="48" r="1.5" fill="#FFF" opacity="0.3"><animate attributeName="opacity" values="0.2;0.5;0.2" dur="3.5s" repeatCount="indefinite"/></circle>
+    <circle cx="52" cy="44" r="1" fill="#FFF" opacity="0.25"><animate attributeName="opacity" values="0.15;0.4;0.15" dur="2.8s" repeatCount="indefinite"/></circle>
+  </svg>`,
   partlycloudy:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <circle cx="22" cy="26" r="9" fill="#FFD700" opacity="0.9"><animate attributeName="cy" values="26;24;26" dur="4s" repeatCount="indefinite"/></circle>
-    <ellipse cx="36" cy="36" rx="16" ry="10" fill="#B0BEC5"/>
-    <ellipse cx="28" cy="34" rx="12" ry="9" fill="#CFD8DC"/>
-    <ellipse cx="44" cy="37" rx="10" ry="7" fill="#B0BEC5"/></svg>`,
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="0,0;3,0;0,0" dur="8s" repeatCount="indefinite"/>
+      <ellipse cx="36" cy="36" rx="16" ry="10" fill="#B0BEC5"/>
+      <ellipse cx="28" cy="34" rx="12" ry="9" fill="#CFD8DC"/>
+      <ellipse cx="44" cy="37" rx="10" ry="7" fill="#B0BEC5"/>
+    </g></svg>`,
   cloudy:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="32" cy="30" rx="20" ry="12" fill="#90A4AE"><animate attributeName="cx" values="32;33;32;31;32" dur="5s" repeatCount="indefinite"/></ellipse>
-    <ellipse cx="24" cy="34" rx="14" ry="10" fill="#B0BEC5"/>
-    <ellipse cx="42" cy="35" rx="12" ry="9" fill="#90A4AE"/></svg>`,
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-4,0;4,0;-4,0" dur="10s" repeatCount="indefinite"/>
+      <ellipse cx="32" cy="30" rx="20" ry="12" fill="#90A4AE"/>
+      <ellipse cx="24" cy="34" rx="14" ry="10" fill="#B0BEC5"/>
+      <ellipse cx="42" cy="35" rx="12" ry="9" fill="#90A4AE"/>
+    </g></svg>`,
   rainy:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="32" cy="24" rx="18" ry="11" fill="#78909C"/>
-    <ellipse cx="22" cy="28" rx="13" ry="9" fill="#90A4AE"/>
-    <ellipse cx="42" cy="28" rx="12" ry="8" fill="#78909C"/>
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-2,0;2,0;-2,0" dur="7s" repeatCount="indefinite"/>
+      <ellipse cx="32" cy="24" rx="18" ry="11" fill="#78909C"/>
+      <ellipse cx="22" cy="28" rx="13" ry="9" fill="#90A4AE"/>
+      <ellipse cx="42" cy="28" rx="12" ry="8" fill="#78909C"/>
+    </g>
     <g fill="#64B5F6" opacity="0.85">
       <ellipse cx="24" cy="43" rx="1.5" ry="4"><animate attributeName="cy" values="43;52;43" dur="1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="1.2s" repeatCount="indefinite"/></ellipse>
       <ellipse cx="32" cy="41" rx="1.5" ry="4"><animate attributeName="cy" values="41;50;41" dur="1.4s" begin="0.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="1.4s" begin="0.3s" repeatCount="indefinite"/></ellipse>
       <ellipse cx="40" cy="43" rx="1.5" ry="4"><animate attributeName="cy" values="43;52;43" dur="1.1s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="1.1s" begin="0.6s" repeatCount="indefinite"/></ellipse>
     </g></svg>`,
   pouring:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="32" cy="22" rx="18" ry="11" fill="#546E7A"/>
-    <ellipse cx="22" cy="26" rx="13" ry="9" fill="#607D8B"/>
-    <ellipse cx="42" cy="26" rx="12" ry="8" fill="#546E7A"/>
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-1,0;2,0;-1,0" dur="6s" repeatCount="indefinite"/>
+      <ellipse cx="32" cy="22" rx="18" ry="11" fill="#546E7A"/>
+      <ellipse cx="22" cy="26" rx="13" ry="9" fill="#607D8B"/>
+      <ellipse cx="42" cy="26" rx="12" ry="8" fill="#546E7A"/>
+    </g>
     <g fill="#42A5F5" opacity="0.9">
       <ellipse cx="20" cy="41" rx="1.5" ry="4"><animate attributeName="cy" values="41;52;41" dur="0.9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0;0.9" dur="0.9s" repeatCount="indefinite"/></ellipse>
       <ellipse cx="28" cy="39" rx="1.5" ry="4"><animate attributeName="cy" values="39;50;39" dur="0.8s" begin="0.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0;0.9" dur="0.8s" begin="0.2s" repeatCount="indefinite"/></ellipse>
@@ -119,27 +141,95 @@ const WEATHER_ICONS = {
       <ellipse cx="44" cy="39" rx="1.5" ry="4"><animate attributeName="cy" values="39;50;39" dur="0.85s" begin="0.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0;0.9" dur="0.85s" begin="0.4s" repeatCount="indefinite"/></ellipse>
     </g></svg>`,
   "lightning-rainy":`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="32" cy="20" rx="18" ry="11" fill="#37474F"/>
-    <ellipse cx="22" cy="25" rx="13" ry="9" fill="#455A64"/>
-    <ellipse cx="42" cy="25" rx="12" ry="8" fill="#37474F"/>
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-1,0;1,0;-1,0" dur="5s" repeatCount="indefinite"/>
+      <ellipse cx="32" cy="20" rx="18" ry="11" fill="#37474F"/>
+      <ellipse cx="22" cy="25" rx="13" ry="9" fill="#455A64"/>
+      <ellipse cx="42" cy="25" rx="12" ry="8" fill="#37474F"/>
+    </g>
     <polygon points="34,33 28,44 33,44 29,54 38,40 33,40" fill="#FFD740" opacity="0.95"><animate attributeName="opacity" values="0.95;0.3;0.95" dur="2.5s" repeatCount="indefinite"/></polygon>
     <g fill="#64B5F6" opacity="0.85">
       <ellipse cx="22" cy="43" rx="1.5" ry="3"><animate attributeName="cy" values="43;51;43" dur="1.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="1.1s" repeatCount="indefinite"/></ellipse>
       <ellipse cx="44" cy="42" rx="1.5" ry="3"><animate attributeName="cy" values="42;50;42" dur="0.9s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="0.9s" begin="0.5s" repeatCount="indefinite"/></ellipse>
     </g></svg>`,
+  snowy:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-2,0;3,0;-2,0" dur="8s" repeatCount="indefinite"/>
+      <ellipse cx="32" cy="24" rx="18" ry="11" fill="#B0BEC5"/>
+      <ellipse cx="22" cy="28" rx="13" ry="9" fill="#CFD8DC"/>
+      <ellipse cx="42" cy="28" rx="12" ry="8" fill="#B0BEC5"/>
+    </g>
+    <g fill="#FFF" opacity="0.85">
+      <circle cx="20" cy="44" r="2"><animate attributeName="cy" values="40;54;40" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="1.8s" repeatCount="indefinite"/></circle>
+      <circle cx="30" cy="42" r="1.5"><animate attributeName="cy" values="38;52;38" dur="2.0s" begin="0.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="2.0s" begin="0.3s" repeatCount="indefinite"/></circle>
+      <circle cx="38" cy="44" r="1.8"><animate attributeName="cy" values="40;54;40" dur="1.6s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="1.6s" begin="0.6s" repeatCount="indefinite"/></circle>
+      <circle cx="46" cy="42" r="1.3"><animate attributeName="cy" values="38;52;38" dur="2.2s" begin="0.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.85;0;0.85" dur="2.2s" begin="0.1s" repeatCount="indefinite"/></circle>
+    </g></svg>`,
+  windy:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#90A4AE" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
+      <path d="M6 20 Q20 14 34 20 Q48 26 58 20" fill="none"><animate attributeName="d" values="M6 20 Q20 14 34 20 Q48 26 58 20;M6 20 Q20 24 34 20 Q48 14 58 20;M6 20 Q20 14 34 20 Q48 26 58 20" dur="3s" repeatCount="indefinite"/></path>
+      <path d="M8 30 Q22 24 36 30 Q50 36 60 30" fill="none"><animate attributeName="d" values="M8 30 Q22 24 36 30 Q50 36 60 30;M8 30 Q22 34 36 30 Q50 24 60 30;M8 30 Q22 24 36 30 Q50 36 60 30" dur="3.5s" begin="0.5s" repeatCount="indefinite"/></path>
+      <path d="M10 40 Q24 36 38 40 Q52 44 62 40" fill="none"><animate attributeName="d" values="M10 40 Q24 36 38 40 Q52 44 62 40;M10 40 Q24 44 38 40 Q52 36 62 40;M10 40 Q24 36 38 40 Q52 44 62 40" dur="2.8s" begin="1s" repeatCount="indefinite"/></path>
+    </g></svg>`,
+};
+
+// ── Map Zambretti conditions to weather icons (day/night aware) ──────────
+const ZAMBRETTI_TO_ICON = {
+  sunny:"sunny", night_clear:"night_clear",
+  settled_fine:"sunny", fine_weather:"sunny",
+  fine_becoming_less_settled:"partlycloudy", fairly_fine_showery_later:"partlycloudy",
+  showery_becoming_more_unsettled:"rainy", unsettled_rain_later:"cloudy",
+  rain_at_times_worse_later:"rainy", rain_at_times_becoming_very_unsettled:"pouring",
+  very_unsettled_rain:"pouring", fine_possibly_showers:"partlycloudy",
+  fairly_fine_showers_likely:"partlycloudy", showery_bright_intervals:"rainy",
+  changeable_some_rain:"cloudy", unsettled_rain_at_times:"rainy",
+  rain_at_frequent_intervals:"pouring", stormy_much_rain:"lightning-rainy",
+  becoming_fine:"partlycloudy", fairly_fine_improving:"partlycloudy",
+  fairly_fine_possibly_showers_early:"partlycloudy", showery_early_improving:"rainy",
+  changeable_mending:"cloudy", rather_unsettled_clearing_later:"cloudy",
+  unsettled_probably_improving:"cloudy", unsettled_short_fine_intervals:"cloudy",
+  very_unsettled_finer_at_times:"pouring", stormy_possibly_improving:"lightning-rainy",
+  stable:"partlycloudy",
 };
 
 // ── Themes ────────────────────────────────────────────────────────────────
 const CONDITION_THEME = {
   sunny:            {bg:"linear-gradient(135deg,#C65A00 0%,#F2820A 35%,#FFAA33 65%,#FFD580 100%)"},
+  night_clear:      {bg:"linear-gradient(135deg,#0a1628 0%,#1a237e 55%,#283593 100%)"},
   partlycloudy:     {bg:"linear-gradient(135deg,#1565C0 0%,#1976D2 55%,#42A5F5 100%)"},
   cloudy:           {bg:"linear-gradient(135deg,#37474F 0%,#546E7A 60%,#78909C 100%)"},
   rainy:            {bg:"linear-gradient(135deg,#1A237E 0%,#283593 55%,#3949AB 100%)"},
   pouring:          {bg:"linear-gradient(135deg,#0D1B2A 0%,#1A237E 55%,#283593 100%)"},
   "lightning-rainy":{bg:"linear-gradient(135deg,#1a0533 0%,#311B92 55%,#4527A0 100%)"},
+  snowy:            {bg:"linear-gradient(135deg,#37474F 0%,#546E7A 60%,#B0BEC5 100%)"},
+  windy:            {bg:"linear-gradient(135deg,#455A64 0%,#607D8B 55%,#90A4AE 100%)"},
 };
 const DEFAULT_THEME = {bg:"linear-gradient(135deg,#1565C0 0%,#1976D2 100%)"};
 function getTheme(c){ return CONDITION_THEME[c] || DEFAULT_THEME; }
+
+// ── Determine weather icon key from zambretti state + night flag ─────────
+function getWeatherIconKey(zambrettiState, isNight) {
+  if (zambrettiState === "settled_fine" || zambrettiState === "fine_weather") {
+    return isNight ? "night_clear" : "sunny";
+  }
+  return ZAMBRETTI_TO_ICON[zambrettiState] || "partlycloudy";
+}
+
+// ── Sparkline SVG ─────────────────────────────────────────────────────────
+function sparklineSvg(points, width=240, height=48) {
+  if (!points || points.length < 2) return "";
+  const min = Math.min(...points), max = Math.max(...points);
+  const range = max - min || 1;
+  const stepX = width / (points.length - 1);
+  const pts = points.map((v, i) => `${(i*stepX).toFixed(1)},${(height - (v-min)/range*(height-6) - 3).toFixed(1)}`).join(" ");
+  const color = points[points.length-1] > points[0] ? "#4CAF50" : "#EF5350";
+  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+    <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${pts}"/>
+    <polygon fill="${color}" opacity="0.12" points="${pts} ${width},${height} 0,${height}"/>
+    <text x="${width-4}" y="10" fill="${color}" font-size="9" font-weight="700" text-anchor="end">${min.toFixed(0)}</text>
+    <text x="${width-4}" y="${height-4}" fill="${color}" font-size="9" font-weight="700" text-anchor="end">${max.toFixed(0)}</text>
+  </svg>`;
+}
 
 // ── Short 2-word label ────────────────────────────────────────────────────
 function shortLabel(key, labels) {
@@ -266,6 +356,10 @@ class ZambrettiWeatherCard extends HTMLElement {
 
   _isRu(){ return this._labels()===LABELS_RU; }
 
+  _attr(id, key, fallback) {
+    return this._hass?.states?.[id]?.attributes?.[key] ?? fallback;
+  }
+
   _render() {
     if (!this._hass) return;
     const cfg=this._config, L=this._labels();
@@ -278,10 +372,19 @@ class ZambrettiWeatherCard extends HTMLElement {
     const s24h=this._state(cfg.entity_24h);
     const precip = Math.max(0, Math.min(100, parseInt(this._state(cfg.entity_precip)||"0", 10) || 0));
 
-    const cond=ZAMBRETTI_CONDITION[zState]||"partlycloudy";
+    // Night detection and icon selection
+    const isNight = this._attr(cfg.entity_zambretti, "is_night", false);
+    const iconKey = getWeatherIconKey(zState, isNight);
+    const condThemeKey = isNight && (zState === "settled_fine" || zState === "fine_weather")
+      ? "night_clear" : (ZAMBRETTI_CONDITION[zState] || "partlycloudy");
+
+    const windSpeed = this._attr(cfg.entity_zambretti, "wind_speed", null);
+    const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
+    const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null);
+
     const autoTheme = cfg.auto_theme !== false;
-    const theme = autoTheme ? getTheme(cond) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
-    const icon=WEATHER_ICONS[cond]||WEATHER_ICONS.partlycloudy;
+    const theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
+    const icon=WEATHER_ICONS[iconKey]||WEATHER_ICONS.partlycloudy;
     const zLabel=L[zState]||zState||"—";
     const sLabel=L[sState]||sState||"—";
     const precipLabel=this._isRu()?"Осадки":"Precip";
@@ -289,6 +392,9 @@ class ZambrettiWeatherCard extends HTMLElement {
     const showPrecip    = cfg.show_precip    !== false;
     const showForecasts = cfg.show_forecasts !== false;
     const showSager     = cfg.show_sager     !== false;
+
+    // Sparkline data from sensor attributes
+    const pHistory = this._attr(cfg.entity_zambretti, "pressure_history", null);
 
     const fCells=[
       {label:"6h",  key:s6h},
@@ -301,7 +407,14 @@ class ZambrettiWeatherCard extends HTMLElement {
         <span class="fc-lbl">${L[f.key] || f.key || "—"}</span>
       </div>`).join("");
 
-    // Grid layout: if precip hidden → main-cell takes full width
+    // Wind info line
+    const windStr = windSpeed !== null
+      ? `${windDir ? windDir + " " : ""}${windSpeed.toFixed?.(1) || windSpeed} ${this._isRu()?"м/с":"m/s"}`
+      : (windDir || "");
+
+    const showWind = windStr && windStr.length > 0;
+
+    // Grid layout
     const gridCols = showPrecip ? "1fr 1fr" : "1fr";
 
     this.shadowRoot.innerHTML=`
@@ -323,11 +436,16 @@ class ZambrettiWeatherCard extends HTMLElement {
           ${showForecasts ? `
           <div class="cell forecast-row">${fCells}</div>` : ""}
         </div>
-        ${showSager ? `
-        <div class="footer">
-          <span class="footer-badge">Sager</span>
-          <span class="footer-text">${sLabel}</span>
+        ${pHistory && pHistory.length > 1 ? `
+        <div class="sparkline-row">
+          <div class="sparkline-box">${sparklineSvg(pHistory, 240, 42)}</div>
         </div>` : ""}
+        <div class="footer">
+          ${showWind ? `<span class="footer-wind">${windStr}</span>` : ""}
+          ${showSager ? `
+          <span class="footer-badge">Sager</span>
+          <span class="footer-text">${sLabel}</span>` : ""}
+        </div>
       </ha-card>`;
   }
 
@@ -470,6 +588,16 @@ class ZambrettiWeatherCard extends HTMLElement {
         text-shadow: 0 1px 3px rgba(0,0,0,0.3);
       }
 
+      /* ── Sparkline row ── */
+      .sparkline-row {
+        padding: ${compact?"4px 12px 2px":"6px 16px 4px"};
+        background: rgba(0,0,0,0.08);
+      }
+      .sparkline-box {
+        width:100%; height:42px;
+        opacity: 0.85;
+      }
+
       /* ── Footer ── */
       .footer {
         display:flex; align-items:center;
@@ -477,6 +605,15 @@ class ZambrettiWeatherCard extends HTMLElement {
         padding: ${compact?"6px 12px 8px":"8px 16px 10px"};
         background: rgba(0,0,0,0.20);
         border-top: 1px solid rgba(255,255,255,0.09);
+        flex-wrap: wrap;
+      }
+
+      .footer-wind {
+        font-size: ${(0.72*s).toFixed(2)}rem;
+        font-weight: 600;
+        opacity: 0.85;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
       }
 
       .footer-badge {

@@ -9,6 +9,7 @@ from .const import (
     DOMAIN,
     CONF_PRESSURE_SENSOR,
     CONF_WIND_SENSOR,
+    CONF_WIND_SPEED_SENSOR,
     CONF_TEMPERATURE_SENSOR,
     CONF_HUMIDITY_SENSOR,
     CONF_LATITUDE,
@@ -17,7 +18,7 @@ from .const import (
 )
 
 CONF_LOCATION = "location"
-OPTIONAL_ENTITY_KEYS = (CONF_WIND_SENSOR, CONF_TEMPERATURE_SENSOR, CONF_HUMIDITY_SENSOR)
+OPTIONAL_ENTITY_KEYS = (CONF_WIND_SENSOR, CONF_WIND_SPEED_SENSOR, CONF_TEMPERATURE_SENSOR, CONF_HUMIDITY_SENSOR)
 
 PRESSURE_SENSOR_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
@@ -30,6 +31,13 @@ WIND_SENSOR_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
         domain="sensor",
         device_class=["wind_direction", "wind_speed"],
+    )
+)
+
+WIND_SPEED_SENSOR_SELECTOR = selector.EntitySelector(
+    selector.EntitySelectorConfig(
+        domain="sensor",
+        device_class="wind_speed",
     )
 )
 
@@ -91,6 +99,7 @@ class ZambrettiSagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({
                 vol.Required(CONF_PRESSURE_SENSOR): PRESSURE_SENSOR_SELECTOR,
                 vol.Optional(CONF_WIND_SENSOR): WIND_SENSOR_SELECTOR,
+                vol.Optional(CONF_WIND_SPEED_SENSOR): WIND_SPEED_SENSOR_SELECTOR,
                 vol.Optional(CONF_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SELECTOR,
                 vol.Optional(CONF_HUMIDITY_SENSOR): HUMIDITY_SENSOR_SELECTOR,
                 vol.Optional(CONF_USE_SEA_LEVEL, default=False): selector.BooleanSelector(),
@@ -119,6 +128,7 @@ class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
         entry = self._config_entry
         current_pressure = entry.options.get(CONF_PRESSURE_SENSOR) or entry.data.get(CONF_PRESSURE_SENSOR)
         current_wind = entry.options.get(CONF_WIND_SENSOR) or entry.data.get(CONF_WIND_SENSOR)
+        current_wind_speed = entry.options.get(CONF_WIND_SPEED_SENSOR) or entry.data.get(CONF_WIND_SPEED_SENSOR)
         current_temp = entry.options.get(CONF_TEMPERATURE_SENSOR) or entry.data.get(CONF_TEMPERATURE_SENSOR)
         current_humidity = entry.options.get(CONF_HUMIDITY_SENSOR) or entry.data.get(CONF_HUMIDITY_SENSOR)
         current_use_sea_level = (
@@ -150,6 +160,11 @@ class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
             schema_dict[vol.Optional(CONF_WIND_SENSOR, default=current_wind)] = WIND_SENSOR_SELECTOR
         else:
             schema_dict[vol.Optional(CONF_WIND_SENSOR)] = WIND_SENSOR_SELECTOR
+
+        if current_wind_speed:
+            schema_dict[vol.Optional(CONF_WIND_SPEED_SENSOR, default=current_wind_speed)] = WIND_SPEED_SENSOR_SELECTOR
+        else:
+            schema_dict[vol.Optional(CONF_WIND_SPEED_SENSOR)] = WIND_SPEED_SENSOR_SELECTOR
 
         if current_temp:
             schema_dict[vol.Optional(CONF_TEMPERATURE_SENSOR, default=current_temp)] = TEMPERATURE_SENSOR_SELECTOR

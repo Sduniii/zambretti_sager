@@ -91,6 +91,12 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
         if d and d.wind_degrees is not None:
             attrs["wind_direction"] = wind_degrees_to_compass(d.wind_degrees)
             attrs["wind_degrees"] = round(d.wind_degrees, 1)
+        if d and d.wind_speed is not None:
+            attrs["wind_speed"] = round(d.wind_speed, 1)
+        if d and d.is_night:
+            attrs["is_night"] = d.is_night
+        if d and d.p_history is not None:
+            attrs["pressure_history"] = [round(p, 1) for p in d.p_history]
         return attrs
 
 
