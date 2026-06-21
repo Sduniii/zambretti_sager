@@ -351,6 +351,8 @@ class ZambrettiWeatherCard extends HTMLElement {
       custom_bg:"linear-gradient(135deg,#1565C0 0%,#1976D2 100%)",
       ...config,
     };
+    // Force full re-render when config changes (layout may differ)
+    this.shadowRoot.innerHTML = "";
   }
 
   set hass(h) { this._hass=h; this._render(); }
@@ -399,81 +401,158 @@ class ZambrettiWeatherCard extends HTMLElement {
     const s24h=this._state(cfg.entity_24h);
     const precip = Math.max(0, Math.min(100, parseInt(this._state(cfg.entity_precip)||"0", 10) || 0));
 
-    // Night detection and icon selection
     const isNight = this._attr(cfg.entity_zambretti, "is_night", false);
     const iconKey = getWeatherIconKey(zState, isNight);
     const condThemeKey = isNight && (zState === "settled_fine" || zState === "fine_weather")
       ? "night_clear" : (ZAMBRETTI_CONDITION[zState] || "partlycloudy");
 
     const windSpeed = this._attr(cfg.entity_zambretti, "wind_speed", null);
-    const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
-    const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null);
+    const windDir   = this._attr(cfg.entity_zambretti, "wind_direction", null);
 
     const autoTheme = cfg.auto_theme !== false;
     const theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
-    const icon=WEATHER_ICONS[iconKey]||WEATHER_ICONS.partlycloudy;
-    const zLabel=L[zState]||zState||"—";
-    const sLabel=L[sState]||sState||"—";
-    const precipLabel=this._isRu()?"Осадки":"Precip";
+
+    const zLabel = L[zState] || zState || "—";
+    const sLabel = L[sState] || sState || "—";
+
+    const langLabels = this._labels();
+    const isRu = langLabels === LABELS_RU;
+    const isFr = langLabels === LABELS_FR;
+    const precipLabel = isRu ? "Осадки" : isFr ? "Précip." : "Precip";
+    const msLabel     = isRu ? "м/с"    : isFr ? "m/s"    : "m/s";
 
     const showPrecip    = cfg.show_precip    !== false;
     const showForecasts = cfg.show_forecasts !== false;
     const showSager     = cfg.show_sager     !== false;
 
-    // Sparkline data from sensor attributes
     const pHistory = this._attr(cfg.entity_zambretti, "pressure_history", null);
 
-    const fCells=[
-      {label:"6h",  key:s6h},
-      {label:"12h", key:s12h},
-      {label:"24h", key:s24h},
-    ].map(f=>`
-      <div class="fc">
-        <span class="fc-time">${f.label}</span>
-        <span class="fc-icon">${WEATHER_ICONS[ZAMBRETTI_CONDITION[f.key]||"partlycloudy"]||""}</span>
-        <span class="fc-lbl">${L[f.key] || f.key || "—"}</span>
-      </div>`).join("");
-
-    // Wind info line
     const windStr = windSpeed !== null
-      ? `${windDir ? windDir + " " : ""}${windSpeed.toFixed?.(1) || windSpeed} ${this._isRu()?"м/с":"m/s"}`
+      ? `${windDir ? windDir + " " : ""}${windSpeed.toFixed?.(1) ?? windSpeed} ${msLabel}`
       : (windDir || "");
+    const showWind = windStr.length > 0;
 
-    const showWind = windStr && windStr.length > 0;
+    // ── First render: build full DOM ──────────────────────────────────────
+    const needsFullRender = !this.shadowRoot.querySelector("ha-card");
+    if (needsFullRender) {
+      const gridCols = showPrecip ? "1fr 1fr" : "1fr";
 
-    // Grid layout
-    const gridCols = showPrecip ? "1fr 1fr" : "1fr";
+      const fCells = [
+        {label:"6h",  key:s6h},
+        {label:"12h", key:s12h},
+        {label:"24h", key:s24h},
+      ].map(f => `
+        <div class="fc" data-fc-key="${f.label}">
+          <span class="fc-time">${f.label}</span>
+          <span class="fc-icon" data-fc-icon="${f.label}">${WEATHER_ICONS[ZAMBRETTI_CONDITION[f.key]||"partlycloudy"]||""}</span>
+          <span class="fc-lbl"  data-fc-lbl="${f.label}">${L[f.key] || f.key || "—"}</span>
+        </div>`).join("");
 
-    this.shadowRoot.innerHTML=`
-      <style>${this._css(theme,compact,showPrecip)}</style>
-      <ha-card style="background:${theme.bg}">
-        <div class="grid" style="grid-template-columns:${gridCols}">
-          <div class="cell main-cell">
-            <div class="main-icon">${icon}</div>
-            <div class="main-info">
-              <div class="main-label">${zLabel}</div>
-              <div class="main-sub">Zambretti</div>
+      this.shadowRoot.innerHTML = `
+        <style>${this._css(theme, compact, showPrecip)}</style>
+        <ha-card style="background:${theme.bg}">
+          <div class="grid" style="grid-template-columns:${gridCols}">
+            <div class="cell main-cell">
+              <div class="main-icon" data-icon-key="${iconKey}">${WEATHER_ICONS[iconKey]||WEATHER_ICONS.partlycloudy}</div>
+              <div class="main-info">
+                <div class="main-label" data-z-label>${zLabel}</div>
+                <div class="main-sub">Zambretti</div>
+              </div>
             </div>
+            ${showPrecip ? `
+            <div class="cell precip-cell">
+              <div class="precip-title" data-precip-title>${precipLabel}</div>
+              <div class="precip-widget" data-precip-widget>${precipWidget(precip)}</div>
+            </div>` : ""}
+            ${showForecasts ? `
+            <div class="cell forecast-row">${fCells}</div>` : ""}
           </div>
-          ${showPrecip ? `
-          <div class="cell precip-cell">
-            <div class="precip-title">${precipLabel}</div>
-            <div class="precip-widget">${precipWidget(precip)}</div>
-          </div>` : ""}
-          ${showForecasts ? `
-          <div class="cell forecast-row">${fCells}</div>` : ""}
-        </div>
-        ${pHistory && pHistory.length > 1 ? `
-        <div class="sparkline-row">
-          <div class="sparkline-box">${sparklineSvg(pHistory, 240, 42)}</div>
-        </div>` : ""}
-        <div class="footer">
-          ${showWind ? `<span class="footer-wind">${windStr}</span>` : ""}
-          ${showSager ? `
-          <span class="footer-badge">Sager</span>
-          <span class="footer-text">${sLabel}</span>` : ""}
-        </div>
-      </ha-card>`;
+          <div class="sparkline-row" data-sparkline-row style="display:${pHistory && pHistory.length > 1 ? "block" : "none"}">
+            <div class="sparkline-box" data-sparkline-box>${pHistory && pHistory.length > 1 ? sparklineSvg(pHistory, 240, 42) : ""}</div>
+          </div>
+          <div class="footer">
+            <span class="footer-wind" data-footer-wind style="display:${showWind?"":"none"}">${windStr}</span>
+            <span class="footer-badge" data-footer-sager style="display:${showSager?"":"none"}">Sager</span>
+            <span class="footer-text"  data-s-label     style="display:${showSager?"":"none"}">${sLabel}</span>
+          </div>
+        </ha-card>`;
+      return;
+    }
+
+    // ── Subsequent renders: patch only changed values ─────────────────────
+    const sr = this.shadowRoot;
+    const card = sr.querySelector("ha-card");
+
+    // Background
+    card.style.background = theme.bg;
+
+    // Icon — replace SVG only if condition changed
+    const iconEl = sr.querySelector("[data-icon-key]");
+    if (iconEl && iconEl.dataset.iconKey !== iconKey) {
+      iconEl.dataset.iconKey = iconKey;
+      iconEl.innerHTML = WEATHER_ICONS[iconKey] || WEATHER_ICONS.partlycloudy;
+    }
+
+    // Main label
+    const zLabelEl = sr.querySelector("[data-z-label]");
+    if (zLabelEl && zLabelEl.textContent !== zLabel) zLabelEl.textContent = zLabel;
+
+    // Precip title
+    const precipTitleEl = sr.querySelector("[data-precip-title]");
+    if (precipTitleEl && precipTitleEl.textContent !== precipLabel) precipTitleEl.textContent = precipLabel;
+
+    // Precip widget — redraw only if value changed
+    const precipWidgetEl = sr.querySelector("[data-precip-widget]");
+    if (precipWidgetEl) {
+      const prev = parseInt(precipWidgetEl.dataset.precipVal ?? "-1", 10);
+      if (prev !== precip) {
+        precipWidgetEl.dataset.precipVal = precip;
+        precipWidgetEl.innerHTML = precipWidget(precip);
+      }
+    }
+
+    // Forecast cells
+    [[s6h,"6h"],[s12h,"12h"],[s24h,"24h"]].forEach(([key, lbl]) => {
+      const iconC = sr.querySelector(`[data-fc-icon="${lbl}"]`);
+      const lblC  = sr.querySelector(`[data-fc-lbl="${lbl}"]`);
+      const ik    = ZAMBRETTI_CONDITION[key] || "partlycloudy";
+      if (iconC && iconC.dataset.fcCondition !== ik) {
+        iconC.dataset.fcCondition = ik;
+        iconC.innerHTML = WEATHER_ICONS[ik] || "";
+      }
+      const newLbl = L[key] || key || "—";
+      if (lblC && lblC.textContent !== newLbl) lblC.textContent = newLbl;
+    });
+
+    // Sparkline
+    const sparkRow = sr.querySelector("[data-sparkline-row]");
+    const sparkBox = sr.querySelector("[data-sparkline-box]");
+    if (sparkRow && sparkBox) {
+      const hasData = pHistory && pHistory.length > 1;
+      sparkRow.style.display = hasData ? "block" : "none";
+      // Only redraw if first/last pressure point changed
+      const newSig = hasData ? `${pHistory[0]},${pHistory[pHistory.length-1]},${pHistory.length}` : "";
+      if (hasData && sparkBox.dataset.sig !== newSig) {
+        sparkBox.dataset.sig = newSig;
+        sparkBox.innerHTML = sparklineSvg(pHistory, 240, 42);
+      }
+    }
+
+    // Footer wind
+    const windEl = sr.querySelector("[data-footer-wind]");
+    if (windEl) {
+      windEl.style.display = showWind ? "" : "none";
+      if (windEl.textContent !== windStr) windEl.textContent = windStr;
+    }
+
+    // Footer sager
+    const sagerBadge = sr.querySelector("[data-footer-sager]");
+    const sLabelEl   = sr.querySelector("[data-s-label]");
+    if (sagerBadge) sagerBadge.style.display = showSager ? "" : "none";
+    if (sLabelEl) {
+      sLabelEl.style.display = showSager ? "" : "none";
+      if (sLabelEl.textContent !== sLabel) sLabelEl.textContent = sLabel;
+    }
   }
 
   _css(theme, compact, showPrecip=true) {
