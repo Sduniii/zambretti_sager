@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.8] — 2026-06-21
+
+### Fixed
+- **SVG animations no longer jitter** — root cause: `shadowRoot.innerHTML` was rebuilt on every `hass` update (every few seconds in HA), destroying and recreating all SVG `<animate>` elements and restarting them from frame 0. Fixed by splitting render into two paths:
+  - **Full render** — only on first load or when the weather condition/theme actually changes
+  - **Patch** — all subsequent `hass` updates update only text nodes, precip gauge, and sparkline via targeted DOM mutations, leaving SVG animations completely untouched
+
+---
+
 ## [1.9.7] — 2026-06-21
 
 ### Fixed

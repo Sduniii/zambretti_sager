@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.7
+ * Zambretti & Sager Weather Card  v1.9.8
  * Lovelace custom card for Home Assistant
  */
 
@@ -451,6 +451,7 @@ class ZambrettiWeatherCard extends HTMLElement {
   }
 
   setConfig(config) {
+    this._rendered = false;  // force full rebuild on next hass update
     this._config = {
       entity_zambretti: "sensor.zambretti_forecast",
       entity_sager:     "sensor.sager_forecast",
@@ -471,7 +472,16 @@ class ZambrettiWeatherCard extends HTMLElement {
     };
   }
 
-  set hass(h) { this._hass = h; this._render(); }
+  set hass(h) {
+    this._hass = h;
+    // Full rebuild only on first render or after config change.
+    // Subsequent hass updates use _patch() to avoid destroying SVG animations.
+    if (!this._rendered) {
+      this._render();
+    } else {
+      this._patch();
+    }
+  }
 
   connectedCallback() {
     this._bgHandler = e => {
@@ -541,17 +551,14 @@ class ZambrettiWeatherCard extends HTMLElement {
     const zLabel = L[zState] || zState || "—";
     const sLabel = L[sState] || sState || "—";
 
-    // Localised strings
     const precipLabel = this._isRu() ? "Осадки" : (this._labels() === LABELS_FR ? "Précip." : "Precip");
 
     const showPrecip    = cfg.show_precip    !== false;
     const showForecasts = cfg.show_forecasts !== false;
     const showSager     = cfg.show_sager     !== false;
 
-    // Sparkline — from sensor attribute
     const pHistory = this._attr(cfg.entity_zambretti, "pressure_history", null);
 
-    // Forecast cells
     const fCells = [
       {label:"6h",  key:s6h},
       {label:"12h", key:s12h},
@@ -565,6 +572,7 @@ class ZambrettiWeatherCard extends HTMLElement {
 
     const gridCols = showPrecip ? "1fr 1fr" : "1fr";
 
+    // Full rebuild
     this.shadowRoot.innerHTML = `
       <style>${this._css(theme, compact, showPrecip)}</style>
       <ha-card style="background:${theme.bg}">
@@ -595,6 +603,107 @@ class ZambrettiWeatherCard extends HTMLElement {
           <span class="footer-text">${sLabel}</span>` : ""}
         </div>
       </ha-card>`;
+
+    // Save state for patch
+    this._lastIconKey    = iconKey;
+    this._lastThemeBg    = theme.bg;
+    this._lastPrecip     = precip;
+    this._lastPHistory   = JSON.stringify(pHistory);
+    this._rendered       = true;
+  }
+
+  // ── Lightweight patch: update only text/values without touching SVG ──────
+  _patch() {
+    if (!this._hass || !this._rendered) return;
+    const cfg = this._config;
+    const L   = this._labels();
+    const sr  = this.shadowRoot;
+
+    const zState = this._state(cfg.entity_zambretti);
+    const sState = this._state(cfg.entity_sager);
+    const s6h    = this._state(cfg.entity_6h);
+    const s12h   = this._state(cfg.entity_12h);
+    const s24h   = this._state(cfg.entity_24h);
+    const precip = Math.max(0, Math.min(100,
+      parseInt(this._state(cfg.entity_precip) || "0", 10) || 0));
+
+    const isNight      = this._attr(cfg.entity_zambretti, "is_night", false);
+    const iconKey      = getWeatherIconKey(zState, isNight);
+    const condThemeKey = (isNight && (zState === "settled_fine" || zState === "fine_weather"))
+      ? "night_clear" : (ZAMBRETTI_CONDITION[zState] || "partlycloudy");
+
+    // If icon or theme changed — full rebuild (rare: weather condition change)
+    const autoTheme = cfg.auto_theme !== false;
+    const theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
+    if (iconKey !== this._lastIconKey || theme.bg !== this._lastThemeBg) {
+      this._rendered = false;
+      this._render();
+      return;
+    }
+
+    // Patch labels
+    const zLabel = L[zState] || zState || "—";
+    const sLabel = L[sState] || sState || "—";
+
+    const mainLabel = sr.querySelector(".main-label");
+    if (mainLabel && mainLabel.textContent !== zLabel) mainLabel.textContent = zLabel;
+
+    const footerText = sr.querySelector(".footer-text");
+    if (footerText && footerText.textContent !== sLabel) footerText.textContent = sLabel;
+
+    // Patch wind
+    const windSpeedRaw = cfg.entity_wind_speed
+      ? this._state(cfg.entity_wind_speed)
+      : this._attr(cfg.entity_zambretti, "wind_speed", null);
+    const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
+    const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null) || degToCompass(windDeg);
+    const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s");
+    const windStr = windFormatted
+      ? (windDir ? `${windDir} ${windFormatted}` : windFormatted)
+      : windDir || "";
+    const footerWind = sr.querySelector(".footer-wind");
+    if (footerWind) {
+      const newWind = windStr ? `💨 ${windStr}` : "";
+      if (footerWind.textContent !== newWind) footerWind.textContent = newWind;
+    }
+
+    // Patch forecast labels (not icons — same condition type usually)
+    const fcLabels = sr.querySelectorAll(".fc-lbl");
+    const fKeys = [s6h, s12h, s24h];
+    fcLabels.forEach((el, i) => {
+      const lbl = L[fKeys[i]] || fKeys[i] || "—";
+      if (el.textContent !== lbl) el.textContent = lbl;
+    });
+
+    // Patch precip gauge only if value changed
+    if (precip !== this._lastPrecip) {
+      const pw = sr.querySelector(".precip-widget");
+      if (pw) pw.innerHTML = precipWidget(precip);
+      this._lastPrecip = precip;
+    }
+
+    // Patch sparkline only if data changed
+    const pHistory = this._attr(cfg.entity_zambretti, "pressure_history", null);
+    const pHistoryStr = JSON.stringify(pHistory);
+    if (pHistoryStr !== this._lastPHistory) {
+      const spkRow = sr.querySelector(".sparkline-row");
+      if (pHistory && pHistory.length > 1) {
+        if (spkRow) {
+          const box = spkRow.querySelector(".sparkline-box");
+          if (box) box.innerHTML = sparklineSvg(pHistory, 240, 44);
+        } else {
+          // Row didn't exist before — insert before footer
+          const footer = sr.querySelector(".footer");
+          if (footer) {
+            const div = document.createElement("div");
+            div.className = "sparkline-row";
+            div.innerHTML = `<div class="sparkline-box">${sparklineSvg(pHistory, 240, 44)}</div>`;
+            footer.parentNode.insertBefore(div, footer);
+          }
+        }
+      }
+      this._lastPHistory = pHistoryStr;
+    }
   }
 
   _css(theme, compact, showPrecip = true) {
