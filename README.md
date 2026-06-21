@@ -2,8 +2,6 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 ![Version](https://img.shields.io/badge/version-1.9.6-blue.svg)
-[![Install with HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ziffmafiya&repository=zambretti_sager&category=integration)
-[![Open in Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zambretti_sager)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
