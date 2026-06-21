@@ -1,7 +1,7 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.9.5-blue.svg)
+![Version](https://img.shields.io/badge/version-1.9.6-blue.svg)
 [![Install with HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ziffmafiya&repository=zambretti_sager&category=integration)
 [![Open in Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zambretti_sager)
 
@@ -27,7 +27,14 @@ After installation, click here to start setup:
 
 ---
 
-## 🎉 What's New in v1.9.5
+## 🎉 What's New in v1.9.6
+
+### Added
+- **🇫🇷 French translation** — full UI translation contributed by [@gael1980](https://github.com/gael1980). Config flow, options flow, and all 38 sensor state labels are now in French.
+
+---
+
+## What's New in v1.9.5
 
 ### ✨ New Features
 - **📈 Pressure Sparkline** — mini pressure chart for the last 24 hours (green = rising, red = falling) shown right on the card
@@ -62,7 +69,7 @@ After installation, click here to start setup:
 - **Night Mode** — automatic moon/stars icon and dark theme when sun is down
 - **Pressure Sparkline** — 24-hour pressure history chart inside the card
 - **Animated Weather Icons** — drifting clouds, falling snow, waving wind lines
-- **Localization** — English and Russian UI out of the box
+- **Localization** — English, Russian, and French UI out of the box
 
 ## Installation
 
@@ -147,6 +154,7 @@ The setup UI is available in:
 
 - 🇬🇧 **English** — default
 - 🇷🇺 **Russian** — автоматически при языке `ru` в профиле HA
+- 🇫🇷 **French** — automatiquement avec la langue `fr` dans le profil HA (merci [@gael1980](https://github.com/gael1980) !)
 
 To change the language, go to your **HA profile → Language**.
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.6] — 2026-06-21
+
+### Added
+- **🇫🇷 French translation** — full `fr.json` translation contributed by [@gael1980](https://github.com/gael1980); config flow, options flow, and all sensor state labels are now available in French
+
+---
+
 ## [1.9.5] — 2026-06-21
 
 ### Fixed
