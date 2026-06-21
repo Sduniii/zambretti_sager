@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.10] — 2026-06-21
+
+### Added
+- **Show wind toggle** — enable or disable wind display in the card footer from the visual editor
+- **Wind speed entity picker** — when wind display is enabled, HA suggests `wind_speed` sensors via `ha-entity-picker` (optional; falls back to main sensor attribute)
+- **GitHub Wiki** — English documentation (installation, configuration, sensors, card, algorithms, troubleshooting, roadmap)
+
+---
+
 ## [1.9.8] — 2026-06-21
 
 ### Fixed

@@ -1,7 +1,7 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.9.8-blue.svg)
+![Version](https://img.shields.io/badge/version-1.9.10-blue.svg)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
@@ -25,7 +25,16 @@ After installation, click here to start setup:
 
 ---
 
-## 🎉 What's New in v1.9.7
+## 🎉 What's New in v1.9.10
+
+### ✨ Added
+- **Show wind toggle** — turn wind display on/off in the card visual editor
+- **Wind speed entity picker** — HA suggests `wind_speed` sensors when wind display is enabled
+- **GitHub Wiki** — full English documentation at [github.com/ziffmafiya/zambretti_sager/wiki](https://github.com/ziffmafiya/zambretti_sager/wiki)
+
+---
+
+## What's New in v1.9.7
 
 ### 🔧 Fixed
 - **Sun animation no longer stutters** — disc and all 8 rays now rotate as one unit with a single smooth `animateTransform`

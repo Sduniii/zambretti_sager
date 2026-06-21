@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.8
+ * Zambretti & Sager Weather Card  v1.9.10
  * Lovelace custom card for Home Assistant
  */
 
@@ -415,6 +415,7 @@ class ZambrettiWeatherCard extends HTMLElement {
       entity_24h:       "sensor.zambretti_forecast_24h",
       entity_precip:    "sensor.precipitation_probability",
       entity_wind_speed: "",
+      show_wind:  true,
       language:   "auto",
       wind_unit:  "m/s",
       compact:    false,
@@ -433,6 +434,7 @@ class ZambrettiWeatherCard extends HTMLElement {
       entity_24h:       "sensor.zambretti_forecast_24h",
       entity_precip:    "sensor.precipitation_probability",
       entity_wind_speed: "",
+      show_wind:   true,
       language:    "auto",
       wind_unit:   "m/s",
       compact:     false,
@@ -505,16 +507,20 @@ class ZambrettiWeatherCard extends HTMLElement {
     const condThemeKey = (isNight && (zState === "settled_fine" || zState === "fine_weather"))
       ? "night_clear" : (ZAMBRETTI_CONDITION[zState] || "partlycloudy");
 
-    // Wind — prefer dedicated wind-speed sensor, fall back to attribute
-    const windSpeedRaw = cfg.entity_wind_speed
-      ? this._state(cfg.entity_wind_speed)
-      : this._attr(cfg.entity_zambretti, "wind_speed", null);
-    const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
-    const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null) || degToCompass(windDeg);
-    const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s");
-    const windStr = windFormatted
-      ? (windDir ? `${windDir} ${windFormatted}` : windFormatted)
-      : windDir || "";
+    // Wind — optional; prefer dedicated sensor, fall back to main sensor attribute
+    const showWind = cfg.show_wind !== false;
+    let windStr = "";
+    if (showWind) {
+      const windSpeedRaw = cfg.entity_wind_speed
+        ? this._state(cfg.entity_wind_speed)
+        : this._attr(cfg.entity_zambretti, "wind_speed", null);
+      const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
+      const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null) || degToCompass(windDeg);
+      const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s");
+      windStr = windFormatted
+        ? (windDir ? `${windDir} ${windFormatted}` : windFormatted)
+        : windDir || "";
+    }
 
     // Theme
     const autoTheme = cfg.auto_theme !== false;
@@ -618,19 +624,24 @@ class ZambrettiWeatherCard extends HTMLElement {
     if (footerText && footerText.textContent !== sLabel) footerText.textContent = sLabel;
 
     // Patch wind
-    const windSpeedRaw = cfg.entity_wind_speed
-      ? this._state(cfg.entity_wind_speed)
-      : this._attr(cfg.entity_zambretti, "wind_speed", null);
-    const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
-    const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null) || degToCompass(windDeg);
-    const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s");
-    const windStr = windFormatted
-      ? (windDir ? `${windDir} ${windFormatted}` : windFormatted)
-      : windDir || "";
+    const showWind = cfg.show_wind !== false;
+    let windStr = "";
+    if (showWind) {
+      const windSpeedRaw = cfg.entity_wind_speed
+        ? this._state(cfg.entity_wind_speed)
+        : this._attr(cfg.entity_zambretti, "wind_speed", null);
+      const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
+      const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null) || degToCompass(windDeg);
+      const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s");
+      windStr = windFormatted
+        ? (windDir ? `${windDir} ${windFormatted}` : windFormatted)
+        : windDir || "";
+    }
     const footerWind = sr.querySelector(".footer-wind");
     if (footerWind) {
       const newWind = windStr ? `💨 ${windStr}` : "";
       if (footerWind.textContent !== newWind) footerWind.textContent = newWind;
+      footerWind.style.display = showWind ? "" : "none";
     }
 
     // Patch forecast labels (not icons — same condition type usually)
@@ -774,7 +785,14 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
   }
 
   setConfig(config) { this._config = {...config}; this._render(); }
-  set hass(h) { this._hass = h; }
+  set hass(h) {
+    this._hass = h;
+    this._syncPickers();
+    if (this.shadowRoot?.querySelector("#wind-entity-picker")
+        && !this.shadowRoot.querySelector("ha-entity-picker")) {
+      this._setupWindEntityPicker();
+    }
+  }
 
   _applyBgToCard(bg) {
     window.dispatchEvent(new CustomEvent("zambretti-bg-preview", {detail:{bg}}));
@@ -796,8 +814,10 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       appearance:   "Внешний вид",
       language:     "Язык",
       langAuto:     "Авто (из Home Assistant)",
-      windEntity:   "Сенсор скорости ветра (необязательно)",
-      windEntityH:  "Оставьте пустым — будет использован атрибут датчика",
+      showWind:     "Показывать ветер",
+      showWindH:    "Направление и скорость ветра в нижней полоске",
+      windEntity:   "Датчик скорости ветра",
+      windEntityH:  "Необязательно — если не выбран, используется атрибут основного датчика",
       windUnit:     "Единицы ветра",
       showSager:    "Показывать прогноз Sager",
       showSagerH:   "Нижняя полоска с аналитикой Sager",
@@ -813,8 +833,10 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       appearance:   "Apparence",
       language:     "Langue",
       langAuto:     "Auto (depuis Home Assistant)",
-      windEntity:   "Capteur de vitesse du vent (optionnel)",
-      windEntityH:  "Laisser vide — utilise l'attribut du capteur",
+      showWind:     "Afficher le vent",
+      showWindH:    "Direction et vitesse du vent dans le bandeau inférieur",
+      windEntity:   "Capteur de vitesse du vent",
+      windEntityH:  "Optionnel — si vide, utilise l'attribut du capteur principal",
       windUnit:     "Unité du vent",
       showSager:    "Afficher la prévision Sager",
       showSagerH:   "Bandeau inférieur avec l'analyse Sager",
@@ -830,8 +852,10 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       appearance:   "Appearance",
       language:     "Language",
       langAuto:     "Auto (from Home Assistant)",
-      windEntity:   "Wind speed sensor (optional)",
-      windEntityH:  "Leave blank — uses sensor attribute",
+      showWind:     "Show wind",
+      showWindH:    "Wind direction and speed in the footer",
+      windEntity:   "Wind speed sensor",
+      windEntityH:  "Optional — if not set, uses the main sensor attribute",
       windUnit:     "Wind unit",
       showSager:    "Show Sager forecast",
       showSagerH:   "Bottom strip with Sager analytics",
@@ -846,11 +870,11 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
     };
 
     const autoThemeOn  = c.auto_theme !== false;
+    const showWindOn   = c.show_wind !== false;
     const customBg     = c.custom_bg || "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)";
     const isSolidColor = /^#[0-9a-fA-F]{3,8}$/.test(customBg.trim());
     const colorInputVal= isSolidColor ? customBg.trim() : "#1565C0";
     const windUnit     = c.wind_unit || "m/s";
-    const windEntity   = c.entity_wind_speed || "";
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -899,10 +923,12 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
         </select>
       </div>
 
+      ${this._toggle("sw-wind", t.showWind, t.showWindH, showWindOn)}
+
+      ${showWindOn ? `
       <div class="field-row">
         <label>${t.windEntity}</label>
-        <input type="text" id="wind-entity" value="${windEntity}"
-          placeholder="sensor.wind_speed (optional)"/>
+        <div id="wind-entity-picker"></div>
         <div class="field-hint">${t.windEntityH}</div>
       </div>
 
@@ -913,7 +939,7 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
           <option value="km/h" ${windUnit==="km/h"?"selected":""}>km/h</option>
           <option value="mph"  ${windUnit==="mph" ?"selected":""}>mph</option>
         </select>
-      </div>
+      </div>` : ""}
 
       ${this._toggle("sw-auto-theme", t.autoTheme, t.autoThemeH, autoThemeOn)}
       ${!autoThemeOn ? `
@@ -939,12 +965,13 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
     this.shadowRoot.querySelector("#sel-lang").addEventListener("change", e => {
       this._fire({...this._config, language: e.target.value});
     });
-    this.shadowRoot.querySelector("#sel-wind-unit").addEventListener("change", e => {
-      this._fire({...this._config, wind_unit: e.target.value});
-    });
-    this.shadowRoot.querySelector("#wind-entity").addEventListener("change", e => {
-      this._fire({...this._config, entity_wind_speed: e.target.value.trim()});
-    });
+    const windUnitSel = this.shadowRoot.querySelector("#sel-wind-unit");
+    if (windUnitSel) {
+      windUnitSel.addEventListener("change", e => {
+        this._fire({...this._config, wind_unit: e.target.value});
+      });
+    }
+    this._setupWindEntityPicker();
     this.shadowRoot.querySelectorAll("ha-switch[data-key]").forEach(el => {
       el.addEventListener("change", () => {
         this._fire({...this._config, [el.dataset.key]: el.checked});
@@ -978,8 +1005,34 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
     }
   }
 
+  _setupWindEntityPicker() {
+    const container = this.shadowRoot?.querySelector("#wind-entity-picker");
+    if (!container || !this._hass) return;
+
+    container.innerHTML = "";
+    const picker = document.createElement("ha-entity-picker");
+    picker.hass = this._hass;
+    picker.value = this._config.entity_wind_speed || "";
+    picker.includeDomains = ["sensor"];
+    picker.includeDeviceClasses = ["wind_speed"];
+    picker.allowCustomEntity = true;
+    const onPickerChange = (e) => {
+      const val = e.detail?.value ?? "";
+      this._fire({...this._config, entity_wind_speed: val || ""});
+    };
+    picker.addEventListener("value-changed", onPickerChange);
+    picker.addEventListener("changed", onPickerChange);
+    container.appendChild(picker);
+  }
+
+  _syncPickers() {
+    const picker = this.shadowRoot?.querySelector("ha-entity-picker");
+    if (picker && this._hass) picker.hass = this._hass;
+  }
+
   _toggle(id, label, hint, checked) {
     const keyMap = {
+      "sw-wind": "show_wind",
       "sw-sager":"show_sager", "sw-precip":"show_precip",
       "sw-forecasts":"show_forecasts", "sw-auto-theme":"auto_theme",
     };
