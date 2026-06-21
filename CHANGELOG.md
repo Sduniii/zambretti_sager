@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.11] — 2026-06-21
+
+### Added
+- **17 new languages** — German, Spanish, Italian, Polish, Chinese (Simplified & Traditional), Dutch, Portuguese, Ukrainian, Japanese, Korean, Czech, Swedish, Danish, Norwegian, Hungarian, Turkish
+- Full translations for config flow, options flow, and all 38 sensor states
+- Card language selector expanded to 20 languages with auto-detect from Home Assistant
+
+---
+
 ## [1.9.10] — 2026-06-21
 
 ### Added

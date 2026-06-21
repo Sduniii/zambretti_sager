@@ -1,7 +1,7 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.9.10-blue.svg)
+![Version](https://img.shields.io/badge/version-1.9.11-blue.svg)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
@@ -25,7 +25,15 @@ After installation, click here to start setup:
 
 ---
 
-## 🎉 What's New in v1.9.10
+## 🎉 What's New in v1.9.11
+
+### ✨ Added
+- **20 languages** — DE, ES, IT, PL, ZH (Simplified & Traditional), NL, PT, UK, JA, KO, CS, SV, DA, NB, HU, TR + existing EN, RU, FR
+- Card language selector expanded with auto-detect from Home Assistant profile
+
+---
+
+## What's New in v1.9.10
 
 ### ✨ Added
 - **Show wind toggle** — turn wind display on/off in the card visual editor
@@ -93,7 +101,7 @@ After installation, click here to start setup:
 - **Night Mode** — automatic moon/stars icon and dark theme when sun is down
 - **Pressure Sparkline** — 24-hour pressure history chart inside the card
 - **Animated Weather Icons** — drifting clouds, falling snow, waving wind lines
-- **Localization** — English, Russian, and French UI out of the box
+- **Localization** — 20 languages: English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian, Ukrainian, Chinese (Simplified & Traditional), Japanese, Korean, Czech, Swedish, Danish, Norwegian, Hungarian, Turkish
 
 ## Installation
 
@@ -174,13 +182,11 @@ P_sea = P_abs / (1 − (0.0065 × h) / (T + 0.0065 × h + 273.15))^5.257
 
 ## Localization
 
-The setup UI is available in:
+The setup UI and Lovelace card are available in **20 languages**:
 
-- 🇬🇧 **English** — default
-- 🇷🇺 **Russian** — автоматически при языке `ru` в профиле HA
-- 🇫🇷 **French** — automatiquement avec la langue `fr` dans le profil HA (merci [@gael1980](https://github.com/gael1980) !)
+🇬🇧 English · 🇩🇪 Deutsch · 🇪🇸 Español · 🇫🇷 Français · 🇮🇹 Italiano · 🇳🇱 Nederlands · 🇵🇱 Polski · 🇵🇹 Português · 🇷🇺 Русский · 🇺🇦 Українська · 🇨🇳 简体中文 · 🇹🇼 繁體中文 · 🇯🇵 日本語 · 🇰🇷 한국어 · 🇨🇿 Čeština · 🇸🇪 Svenska · 🇩🇰 Dansk · 🇳🇴 Norsk · 🇭🇺 Magyar · 🇹🇷 Türkçe
 
-To change the language, go to your **HA profile → Language**.
+To change the language, go to your **HA profile → Language**, or set the card language in the visual editor.
 
 ## Requirements
 

@@ -1,7 +1,14 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.10
+ * Zambretti & Sager Weather Card  v1.9.11
  * Lovelace custom card for Home Assistant
  */
+
+import {
+  getLabels,
+  getPrecipLabel,
+  getEditorStrings,
+  LANG_OPTIONS,
+} from "./zambretti-card-i18n.js";
 
 // ── Condition map ─────────────────────────────────────────────────────────
 const ZAMBRETTI_CONDITION = {
@@ -19,87 +26,6 @@ const ZAMBRETTI_CONDITION = {
   unsettled_probably_improving:"cloudy", unsettled_short_fine_intervals:"cloudy",
   very_unsettled_finer_at_times:"pouring", stormy_possibly_improving:"lightning-rainy",
   stable:"partlycloudy",
-};
-
-// ── Labels EN ─────────────────────────────────────────────────────────────
-const LABELS_EN = {
-  settled_fine:"Settled Fine", fine_weather:"Fine Weather",
-  fine_becoming_less_settled:"Fine, Less Settled", fairly_fine_showery_later:"Fine, Showers Later",
-  showery_becoming_more_unsettled:"Showery, Worsening", unsettled_rain_later:"Unsettled, Rain Later",
-  rain_at_times_worse_later:"Rain, Worse Later", rain_at_times_becoming_very_unsettled:"Rain, Very Unsettled",
-  very_unsettled_rain:"Very Unsettled, Rain", fine_possibly_showers:"Fine, Possibly Showers",
-  fairly_fine_showers_likely:"Fine, Showers Likely", showery_bright_intervals:"Showery, Bright Intervals",
-  changeable_some_rain:"Changeable, Some Rain", unsettled_rain_at_times:"Unsettled, Rain at Times",
-  rain_at_frequent_intervals:"Frequent Rain", stormy_much_rain:"Stormy, Heavy Rain",
-  becoming_fine:"Becoming Fine", fairly_fine_improving:"Fine, Improving",
-  fairly_fine_possibly_showers_early:"Fine, Early Showers", showery_early_improving:"Early Showers, Improving",
-  changeable_mending:"Changeable, Mending", rather_unsettled_clearing_later:"Unsettled, Clearing Later",
-  unsettled_probably_improving:"Unsettled, Improving", unsettled_short_fine_intervals:"Unsettled, Short Fine",
-  very_unsettled_finer_at_times:"Very Unsettled", stormy_possibly_improving:"Stormy, May Improve",
-  stable:"Stable",
-  sager_fair_improving:"Fair, improving", sager_fair_tending_to_deteriorate:"Fair, tending to deteriorate",
-  sager_fair_no_change:"Fair, no important change", sager_unsettled_rain_likely:"Unsettled, rain likely",
-  sager_unsettled_probably_improving:"Unsettled, probably improving",
-  sager_unsettled_rain_at_times:"Unsettled, rain at times",
-  sager_changeable_becoming_fairer:"Changeable, becoming fairer",
-  sager_changeable_becoming_more_unsettled:"Changeable, more unsettled",
-  sager_variable_slowly_improving:"Variable, slowly improving",
-  sager_variable_slowly_deteriorating:"Variable, slowly deteriorating",
-  sager_variable_some_change:"Variable, some change",
-};
-
-// ── Labels RU ─────────────────────────────────────────────────────────────
-const LABELS_RU = {
-  settled_fine:"Ясно, устойчиво", fine_weather:"Хорошая погода",
-  fine_becoming_less_settled:"Хорошо, возможно ухудшение", fairly_fine_showery_later:"Довольно хорошо, дожди позже",
-  showery_becoming_more_unsettled:"Дождливо, ухудшение", unsettled_rain_later:"Неустойчиво, дождь позже",
-  rain_at_times_worse_later:"Дожди, ухудшение позже", rain_at_times_becoming_very_unsettled:"Дожди, сильное ухудшение",
-  very_unsettled_rain:"Очень неустойчиво, дождь", fine_possibly_showers:"Хорошо, возможны ливни",
-  fairly_fine_showers_likely:"Довольно хорошо, ливни вероятны", showery_bright_intervals:"Ливни, прояснения",
-  changeable_some_rain:"Переменчиво, небольшой дождь", unsettled_rain_at_times:"Неустойчиво, дожди периодически",
-  rain_at_frequent_intervals:"Частые дожди", stormy_much_rain:"Штормово, сильные дожди",
-  becoming_fine:"Улучшение погоды", fairly_fine_improving:"Довольно хорошо, улучшение",
-  fairly_fine_possibly_showers_early:"Довольно хорошо, ранние ливни", showery_early_improving:"Ранние ливни, улучшение",
-  changeable_mending:"Переменчиво, улучшается", rather_unsettled_clearing_later:"Неустойчиво, прояснение позже",
-  unsettled_probably_improving:"Неустойчиво, вероятно улучшение", unsettled_short_fine_intervals:"Неустойчиво, короткие прояснения",
-  very_unsettled_finer_at_times:"Очень неустойчиво, временами лучше", stormy_possibly_improving:"Штормово, возможно улучшение",
-  stable:"Стабильно",
-  sager_fair_improving:"Хорошая погода, улучшение", sager_fair_tending_to_deteriorate:"Пока хорошо, ожидается ухудшение",
-  sager_fair_no_change:"Хорошая погода, без изменений", sager_unsettled_rain_likely:"Неустойчиво, дождь вероятен",
-  sager_unsettled_probably_improving:"Неустойчиво, вероятно улучшение",
-  sager_unsettled_rain_at_times:"Неустойчиво, дожди периодически",
-  sager_changeable_becoming_fairer:"Переменчиво, прояснение",
-  sager_changeable_becoming_more_unsettled:"Переменчиво, ухудшение",
-  sager_variable_slowly_improving:"Переменно, медленное улучшение",
-  sager_variable_slowly_deteriorating:"Переменно, медленное ухудшение",
-  sager_variable_some_change:"Переменно, ожидаются изменения",
-};
-
-// ── Labels FR ─────────────────────────────────────────────────────────────
-const LABELS_FR = {
-  settled_fine:"Beau temps stable", fine_weather:"Beau temps",
-  fine_becoming_less_settled:"Beau temps, moins stable", fairly_fine_showery_later:"Assez beau, averses plus tard",
-  showery_becoming_more_unsettled:"Averses, aggravation", unsettled_rain_later:"Perturbé, pluie plus tard",
-  rain_at_times_worse_later:"Pluie, aggravation", rain_at_times_becoming_very_unsettled:"Pluie, très perturbé",
-  very_unsettled_rain:"Très perturbé, pluie", fine_possibly_showers:"Beau, averses possibles",
-  fairly_fine_showers_likely:"Assez beau, averses probables", showery_bright_intervals:"Averses, éclaircies",
-  changeable_some_rain:"Variable, quelques pluies", unsettled_rain_at_times:"Perturbé, pluie par moments",
-  rain_at_frequent_intervals:"Pluies fréquentes", stormy_much_rain:"Orageux, fortes pluies",
-  becoming_fine:"Amélioration", fairly_fine_improving:"Assez beau, amélioration",
-  fairly_fine_possibly_showers_early:"Assez beau, averses tôt", showery_early_improving:"Averses tôt, amélioration",
-  changeable_mending:"Variable, amélioration", rather_unsettled_clearing_later:"Perturbé, éclaircies plus tard",
-  unsettled_probably_improving:"Perturbé, amélioration probable", unsettled_short_fine_intervals:"Perturbé, courtes éclaircies",
-  very_unsettled_finer_at_times:"Très perturbé, accalmies", stormy_possibly_improving:"Orageux, amélioration possible",
-  stable:"Stable",
-  sager_fair_improving:"Beau temps, amélioration", sager_fair_tending_to_deteriorate:"Beau temps, tendance à la dégradation",
-  sager_fair_no_change:"Beau temps, pas de changement", sager_unsettled_rain_likely:"Perturbé, pluie probable",
-  sager_unsettled_probably_improving:"Perturbé, amélioration probable",
-  sager_unsettled_rain_at_times:"Perturbé, pluie par moments",
-  sager_changeable_becoming_fairer:"Variable, tendance à l'amélioration",
-  sager_changeable_becoming_more_unsettled:"Variable, devenant plus perturbé",
-  sager_variable_slowly_improving:"Variable, amélioration progressive",
-  sager_variable_slowly_deteriorating:"Variable, dégradation progressive",
-  sager_variable_some_change:"Variable, changement attendu",
 };
 
 // ── SVG weather icons ─────────────────────────────────────────────────────
@@ -477,14 +403,12 @@ class ZambrettiWeatherCard extends HTMLElement {
   _attr(id, key, fallback){ return this._hass?.states?.[id]?.attributes?.[key] ?? fallback; }
 
   _labels() {
-    const lang = this._config.language === "auto"
-      ? (this._hass?.language || "en") : this._config.language;
-    if (lang.startsWith("ru")) return LABELS_RU;
-    if (lang.startsWith("fr")) return LABELS_FR;
-    return LABELS_EN;
+    return getLabels(this._config.language || "auto", this._hass?.language || "en");
   }
 
-  _isRu() { return this._labels() === LABELS_RU; }
+  _precipLabel() {
+    return getPrecipLabel(this._config.language || "auto", this._hass?.language || "en");
+  }
 
   _render() {
     if (!this._hass) return;
@@ -530,7 +454,7 @@ class ZambrettiWeatherCard extends HTMLElement {
     const zLabel = L[zState] || zState || "—";
     const sLabel = L[sState] || sState || "—";
 
-    const precipLabel = this._isRu() ? "Осадки" : (this._labels() === LABELS_FR ? "Précip." : "Precip");
+    const precipLabel = this._precipLabel();
 
     const showPrecip    = cfg.show_precip    !== false;
     const showForecasts = cfg.show_forecasts !== false;
@@ -805,69 +729,9 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
 
   _render() {
     const c = this._config;
-    const lang  = c.language || "auto";
+    const lang = c.language || "auto";
     const hLang = this._hass?.language || "en";
-    const isRu  = lang === "ru" || (lang === "auto" && hLang.startsWith("ru"));
-    const isFr  = lang === "fr" || (lang === "auto" && hLang.startsWith("fr"));
-
-    const t = isRu ? {
-      appearance:   "Внешний вид",
-      language:     "Язык",
-      langAuto:     "Авто (из Home Assistant)",
-      showWind:     "Показывать ветер",
-      showWindH:    "Направление и скорость ветра в нижней полоске",
-      windEntity:   "Датчик скорости ветра",
-      windEntityH:  "Необязательно — если не выбран, используется атрибут основного датчика",
-      windUnit:     "Единицы ветра",
-      showSager:    "Показывать прогноз Sager",
-      showSagerH:   "Нижняя полоска с аналитикой Sager",
-      showPrecip:   "Показывать вероятность осадков",
-      showPrecipH:  "Круговой индикатор справа",
-      showForecasts:"Показывать прогнозы 6ч / 12ч / 24ч",
-      showForecastH:"Нижний ряд с иконками",
-      autoTheme:    "Авто-тема по погоде",
-      autoThemeH:   "Цвет фона меняется по текущему условию",
-      customBg:     "Свой фон карточки",
-      customBgH:    "CSS-градиент или цвет, напр. #1a1a2e или linear-gradient(...)",
-    } : isFr ? {
-      appearance:   "Apparence",
-      language:     "Langue",
-      langAuto:     "Auto (depuis Home Assistant)",
-      showWind:     "Afficher le vent",
-      showWindH:    "Direction et vitesse du vent dans le bandeau inférieur",
-      windEntity:   "Capteur de vitesse du vent",
-      windEntityH:  "Optionnel — si vide, utilise l'attribut du capteur principal",
-      windUnit:     "Unité du vent",
-      showSager:    "Afficher la prévision Sager",
-      showSagerH:   "Bandeau inférieur avec l'analyse Sager",
-      showPrecip:   "Afficher les précipitations",
-      showPrecipH:  "Jauge circulaire à droite",
-      showForecasts:"Afficher les prévisions 6h / 12h / 24h",
-      showForecastH:"Rangée inférieure avec les icônes de prévision",
-      autoTheme:    "Thème automatique selon la météo",
-      autoThemeH:   "La couleur de fond suit la condition météo actuelle",
-      customBg:     "Fond personnalisé",
-      customBgH:    "Dégradé CSS ou couleur, ex. #1a1a2e ou linear-gradient(...)",
-    } : {
-      appearance:   "Appearance",
-      language:     "Language",
-      langAuto:     "Auto (from Home Assistant)",
-      showWind:     "Show wind",
-      showWindH:    "Wind direction and speed in the footer",
-      windEntity:   "Wind speed sensor",
-      windEntityH:  "Optional — if not set, uses the main sensor attribute",
-      windUnit:     "Wind unit",
-      showSager:    "Show Sager forecast",
-      showSagerH:   "Bottom strip with Sager analytics",
-      showPrecip:   "Show precipitation indicator",
-      showPrecipH:  "Circular gauge on the right",
-      showForecasts:"Show 6h / 12h / 24h forecasts",
-      showForecastH:"Bottom row with forecast icons",
-      autoTheme:    "Auto theme by condition",
-      autoThemeH:   "Background color follows current weather condition",
-      customBg:     "Custom card background",
-      customBgH:    "CSS gradient or color, e.g. #1a1a2e or linear-gradient(...)",
-    };
+    const t = getEditorStrings(lang, hLang);
 
     const autoThemeOn  = c.auto_theme !== false;
     const showWindOn   = c.show_wind !== false;
@@ -916,10 +780,11 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       <div class="field-row">
         <label>${t.language}</label>
         <select id="sel-lang">
-          <option value="auto" ${lang==="auto"?"selected":""}>${t.langAuto}</option>
-          <option value="en"   ${lang==="en"  ?"selected":""}>English</option>
-          <option value="fr"   ${lang==="fr"  ?"selected":""}>Français</option>
-          <option value="ru"   ${lang==="ru"  ?"selected":""}>Русский</option>
+          ${LANG_OPTIONS.map(([value, label]) => {
+            const text = value === "auto" ? t.langAuto : label;
+            const selected = lang === value ? "selected" : "";
+            return `<option value="${value}" ${selected}>${text}</option>`;
+          }).join("")}
         </select>
       </div>
 

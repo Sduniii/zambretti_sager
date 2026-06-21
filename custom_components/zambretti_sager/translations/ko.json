@@ -1,0 +1,111 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "기상 관측소 설정",
+        "description": "예보 모델에 사용할 센서를 선택하세요.",
+        "data": {
+          "pressure_sensor": "기압 센서",
+          "wind_sensor": "풍향 센서 (선택)",
+          "wind_speed_sensor": "풍속 센서 (선택)",
+          "temperature_sensor": "온도 센서 (선택)",
+          "humidity_sensor": "습도 센서 (선택)",
+          "use_sea_level_correction": "해수면 기압 보정 사용",
+          "location": "위치"
+        },
+        "data_description": {
+          "pressure_sensor": "기압 센서를 선택하세요",
+          "wind_sensor": "선택: 풍향 센서 (도)",
+          "wind_speed_sensor": "선택: 전용 풍속 센서",
+          "temperature_sensor": "선택: 해수면 기압 보정에 사용",
+          "humidity_sensor": "선택: 강수 확률 정확도 향상",
+          "use_sea_level_correction": "해수면 위 절대 기압 센서 사용 시 활성화",
+          "location": "지도를 클릭하여 고도 계산"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "연결 실패",
+      "unknown": "예기치 않은 오류"
+    },
+    "abort": {
+      "already_configured": "이 기상 관측소는 이미 설정되어 있습니다"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "센서 조정",
+        "description": "Zambretti 및 Sager 계산에 사용되는 센서를 업데이트합니다.",
+        "data": {
+          "pressure_sensor": "기압 센서",
+          "wind_sensor": "풍향 센서 (선택)",
+          "wind_speed_sensor": "풍속 센서 (선택)",
+          "temperature_sensor": "온도 센서 (선택)",
+          "humidity_sensor": "습도 센서 (선택)",
+          "use_sea_level_correction": "해수면 기압 보정 사용",
+          "location": "위치"
+        },
+        "data_description": {
+          "pressure_sensor": "기압 센서를 선택하세요",
+          "wind_sensor": "선택: 풍향 센서 (도)",
+          "wind_speed_sensor": "선택: 전용 풍속 센서",
+          "temperature_sensor": "선택: 해수면 기압 보정에 사용",
+          "humidity_sensor": "선택: 강수 확률 정확도 향상",
+          "use_sea_level_correction": "해수면 위 절대 기압 센서 사용 시 활성화",
+          "location": "지도를 클릭하여 고도 계산"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zambretti_forecast": {
+        "state": {
+          "settled_fine": "맑고 안정적",
+          "fine_weather": "좋은 날씨",
+          "fine_becoming_less_settled": "좋음, 불안정해짐",
+          "fairly_fine_showery_later": "꽤 좋음, 나중에 소나기",
+          "showery_becoming_more_unsettled": "소나기, 악화",
+          "unsettled_rain_later": "불안정, 나중에 비",
+          "rain_at_times_worse_later": "비, 나중에 악화",
+          "rain_at_times_becoming_very_unsettled": "비, 매우 불안정",
+          "very_unsettled_rain": "매우 불안정, 비",
+          "fine_possibly_showers": "좋음, 소나기 가능",
+          "fairly_fine_showers_likely": "꽤 좋음, 소나기 가능성",
+          "showery_bright_intervals": "소나기, 간헐적 맑음",
+          "changeable_some_rain": "변덕스러움, 약한 비",
+          "unsettled_rain_at_times": "불안정, 때때로 비",
+          "rain_at_frequent_intervals": "잦은 비",
+          "stormy_much_rain": "폭풍, 많은 비",
+          "becoming_fine": "개선 중",
+          "fairly_fine_improving": "꽤 좋음, 개선",
+          "fairly_fine_possibly_showers_early": "꽤 좋음, 이른 소나기",
+          "showery_early_improving": "이른 소나기, 개선",
+          "changeable_mending": "변덕스러움, 개선",
+          "rather_unsettled_clearing_later": "다소 불안정, 나중에 갬",
+          "unsettled_probably_improving": "불안정, 아마 개선",
+          "unsettled_short_fine_intervals": "불안정, 짧은 맑음",
+          "very_unsettled_finer_at_times": "매우 불안정, 때때로 개선",
+          "stormy_possibly_improving": "폭풍, 개선 가능",
+          "stable": "안정"
+        }
+      },
+      "sager_forecast": {
+        "state": {
+          "sager_fair_improving": "좋은 날씨, 개선",
+          "sager_fair_tending_to_deteriorate": "좋음, 악화 경향",
+          "sager_fair_no_change": "좋은 날씨, 큰 변화 없음",
+          "sager_unsettled_rain_likely": "불안정, 비 가능성",
+          "sager_unsettled_probably_improving": "불안정, 아마 개선",
+          "sager_unsettled_rain_at_times": "불안정, 때때로 비",
+          "sager_changeable_becoming_fairer": "변덕스러움, 개선 경향",
+          "sager_changeable_becoming_more_unsettled": "변덕스러움, 더 불안정",
+          "sager_variable_slowly_improving": "변덕스러움, 서서히 개선",
+          "sager_variable_slowly_deteriorating": "변덕스러움, 서서히 악화",
+          "sager_variable_some_change": "변덕스러움, 변화 예상"
+        }
+      }
+    }
+  }
+}

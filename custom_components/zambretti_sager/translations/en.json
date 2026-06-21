@@ -7,6 +7,7 @@
         "data": {
           "pressure_sensor": "Pressure Sensor",
           "wind_sensor": "Wind Direction Sensor (optional)",
+          "wind_speed_sensor": "Wind Speed Sensor (optional)",
           "temperature_sensor": "Temperature Sensor (optional)",
           "humidity_sensor": "Humidity Sensor (optional)",
           "use_sea_level_correction": "Enable Sea Level Pressure Correction",
@@ -15,6 +16,7 @@
         "data_description": {
           "pressure_sensor": "Select your barometric pressure sensor",
           "wind_sensor": "Optional: wind direction sensor (in degrees)",
+          "wind_speed_sensor": "Optional: dedicated wind speed sensor",
           "temperature_sensor": "Optional: used for sea level pressure correction",
           "humidity_sensor": "Optional: improves precipitation probability accuracy",
           "use_sea_level_correction": "Enable if using an absolute pressure sensor above sea level",
@@ -33,6 +35,7 @@
         "data": {
           "pressure_sensor": "Pressure Sensor",
           "wind_sensor": "Wind Direction Sensor (optional)",
+          "wind_speed_sensor": "Wind Speed Sensor (optional)",
           "temperature_sensor": "Temperature Sensor (optional)",
           "humidity_sensor": "Humidity Sensor (optional)",
           "use_sea_level_correction": "Enable Sea Level Pressure Correction",
@@ -41,6 +44,7 @@
         "data_description": {
           "pressure_sensor": "Select your barometric pressure sensor",
           "wind_sensor": "Optional: wind direction sensor (in degrees)",
+          "wind_speed_sensor": "Optional: dedicated wind speed sensor",
           "temperature_sensor": "Optional: used for sea level pressure correction",
           "humidity_sensor": "Optional: improves precipitation probability accuracy",
           "use_sea_level_correction": "Enable if using an absolute pressure sensor above sea level",

@@ -1,16 +1,33 @@
 # Localization
 
-The integration supports three UI languages.
+The integration supports **20 languages** for the config flow, options flow, sensor states, and Lovelace card.
 
 ---
 
 ## Supported languages
 
-| Language | Code | Coverage |
+| Language | HA code | Card code |
 |---|---|---|
-| 🇬🇧 English | `en` | Config flow, options, sensors, card |
-| 🇷🇺 Russian | `ru` | Config flow, options, sensors, card |
-| 🇫🇷 French | `fr` | Config flow, options, sensors, card |
+| 🇬🇧 English | `en` | `en` |
+| 🇩🇪 German | `de` | `de` |
+| 🇪🇸 Spanish | `es` | `es` |
+| 🇫🇷 French | `fr` | `fr` |
+| 🇮🇹 Italian | `it` | `it` |
+| 🇳🇱 Dutch | `nl` | `nl` |
+| 🇵🇱 Polish | `pl` | `pl` |
+| 🇵🇹 Portuguese | `pt` | `pt` |
+| 🇷🇺 Russian | `ru` | `ru` |
+| 🇺🇦 Ukrainian | `uk` | `uk` |
+| 🇨🇳 Chinese (Simplified) | `zh-Hans` | `zh-Hans` |
+| 🇹🇼 Chinese (Traditional) | `zh-Hant` | `zh-Hant` |
+| 🇯🇵 Japanese | `ja` | `ja` |
+| 🇰🇷 Korean | `ko` | `ko` |
+| 🇨🇿 Czech | `cs` | `cs` |
+| 🇸🇪 Swedish | `sv` | `sv` |
+| 🇩🇰 Danish | `da` | `da` |
+| 🇳🇴 Norwegian | `nb` | `nb` |
+| 🇭🇺 Hungarian | `hu` | `hu` |
+| 🇹🇷 Turkish | `tr` | `tr` |
 
 ---
 
@@ -18,16 +35,9 @@ The integration supports three UI languages.
 
 Config flow and options flow automatically use the language from your **HA user profile**:
 
-**Profile → Language → English / Русский / Français**
+**Profile → Language**
 
-Translation files:
-
-```
-custom_components/zambretti_sager/translations/
-├── en.json
-├── ru.json
-└── fr.json
-```
+Translation files live in `custom_components/zambretti_sager/translations/`.
 
 ---
 
@@ -38,42 +48,25 @@ The card has its **own** language setting, independent of HA:
 ```yaml
 type: custom:zambretti-weather-card
 entity: sensor.zambretti_forecast
-language: en
+language: de
 ```
 
 | Value | Language |
 |---|---|
-| `en` | English (default) |
-| `ru` | Russian |
-| `fr` | French |
+| `auto` | Follow Home Assistant profile (default) |
+| `de`, `es`, `it`, … | Force a specific language |
 
-> Sensors return **keys** (e.g. `settled_fine`), and the card translates them based on the `language` parameter.
-
----
-
-## Sensor states
-
-38 state keys are translated in all three languages:
-
-- 32 Zambretti states
-- 11 Sager states (including `stable`)
-
-Example keys:
-
-| Key | EN | RU |
-|---|---|---|
-| `settled_fine` | Settled Fine | Ясно, устойчиво |
-| `stormy_much_rain` | Stormy, Heavy Rain | Штормово, сильные дожди |
-| `sager_fair_no_change` | Fair, no important change | Хорошая погода, без изменений |
+All 38 forecast state keys are translated in every supported language.
 
 ---
 
 ## Adding a new language
 
-1. Create `custom_components/zambretti_sager/translations/xx.json` based on `en.json`
-2. Add a `LABELS_XX` block in `frontend/zambretti-weather-card.js`
-3. Add `xx` to the card language selector
-4. Submit a Pull Request
+1. Add `scripts/locale_overlays/xx.json` (copy from `de.json` as template)
+2. Run `python scripts/gen_translations.py` to generate `translations/xx.json`
+3. Run `python scripts/gen_card_i18n.py` to update card labels
+4. Add the language to `LANG_OPTIONS` in `scripts/gen_card_i18n.py`
+5. Submit a Pull Request
 
 ---
 

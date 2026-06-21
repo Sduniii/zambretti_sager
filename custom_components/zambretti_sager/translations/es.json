@@ -1,0 +1,111 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configuración de la estación meteorológica",
+        "description": "Seleccione los sensores para su modelo de predicción.",
+        "data": {
+          "pressure_sensor": "Sensor de presión",
+          "wind_sensor": "Sensor de dirección del viento (opcional)",
+          "wind_speed_sensor": "Sensor de velocidad del viento (opcional)",
+          "temperature_sensor": "Sensor de temperatura (opcional)",
+          "humidity_sensor": "Sensor de humedad (opcional)",
+          "use_sea_level_correction": "Activar corrección de presión a nivel del mar",
+          "location": "Ubicación"
+        },
+        "data_description": {
+          "pressure_sensor": "Seleccione su sensor de presión barométrica",
+          "wind_sensor": "Opcional: sensor de dirección del viento (en grados)",
+          "wind_speed_sensor": "Opcional: sensor dedicado de velocidad del viento",
+          "temperature_sensor": "Opcional: usado para la corrección a nivel del mar",
+          "humidity_sensor": "Opcional: mejora la precisión de la probabilidad de precipitación",
+          "use_sea_level_correction": "Active si usa un sensor de presión absoluta por encima del nivel del mar",
+          "location": "Haga clic en el mapa para calcular la altitud"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Error de conexión",
+      "unknown": "Error inesperado"
+    },
+    "abort": {
+      "already_configured": "Esta estación meteorológica ya está configurada"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ajustar sensores",
+        "description": "Actualice los sensores usados para los cálculos de Zambretti y Sager.",
+        "data": {
+          "pressure_sensor": "Sensor de presión",
+          "wind_sensor": "Sensor de dirección del viento (opcional)",
+          "wind_speed_sensor": "Sensor de velocidad del viento (opcional)",
+          "temperature_sensor": "Sensor de temperatura (opcional)",
+          "humidity_sensor": "Sensor de humedad (opcional)",
+          "use_sea_level_correction": "Activar corrección de presión a nivel del mar",
+          "location": "Ubicación"
+        },
+        "data_description": {
+          "pressure_sensor": "Seleccione su sensor de presión barométrica",
+          "wind_sensor": "Opcional: sensor de dirección del viento (en grados)",
+          "wind_speed_sensor": "Opcional: sensor dedicado de velocidad del viento",
+          "temperature_sensor": "Opcional: usado para la corrección a nivel del mar",
+          "humidity_sensor": "Opcional: mejora la precisión de la probabilidad de precipitación",
+          "use_sea_level_correction": "Active si usa un sensor de presión absoluta por encima del nivel del mar",
+          "location": "Haga clic en el mapa para calcular la altitud"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zambretti_forecast": {
+        "state": {
+          "settled_fine": "Buen tiempo estable",
+          "fine_weather": "Buen tiempo",
+          "fine_becoming_less_settled": "Buen tiempo, menos estable",
+          "fairly_fine_showery_later": "Bastante bueno, chubascos después",
+          "showery_becoming_more_unsettled": "Chubascos, empeorando",
+          "unsettled_rain_later": "Inestable, lluvia después",
+          "rain_at_times_worse_later": "Lluvia, empeorando después",
+          "rain_at_times_becoming_very_unsettled": "Lluvia, muy inestable",
+          "very_unsettled_rain": "Muy inestable, lluvia",
+          "fine_possibly_showers": "Buen tiempo, posibles chubascos",
+          "fairly_fine_showers_likely": "Bastante bueno, chubascos probables",
+          "showery_bright_intervals": "Chubascos, claros",
+          "changeable_some_rain": "Variable, algo de lluvia",
+          "unsettled_rain_at_times": "Inestable, lluvia a intervalos",
+          "rain_at_frequent_intervals": "Lluvia frecuente",
+          "stormy_much_rain": "Tormentoso, mucha lluvia",
+          "becoming_fine": "Mejorando",
+          "fairly_fine_improving": "Bastante bueno, mejorando",
+          "fairly_fine_possibly_showers_early": "Bastante bueno, chubascos tempranos",
+          "showery_early_improving": "Chubascos tempranos, mejorando",
+          "changeable_mending": "Variable, mejorando",
+          "rather_unsettled_clearing_later": "Inestable, despejando después",
+          "unsettled_probably_improving": "Inestable, probable mejora",
+          "unsettled_short_fine_intervals": "Inestable, claros breves",
+          "very_unsettled_finer_at_times": "Muy inestable, mejor a ratos",
+          "stormy_possibly_improving": "Tormentoso, posible mejora",
+          "stable": "Estable"
+        }
+      },
+      "sager_forecast": {
+        "state": {
+          "sager_fair_improving": "Buen tiempo, mejorando",
+          "sager_fair_tending_to_deteriorate": "Buen tiempo, tendencia a empeorar",
+          "sager_fair_no_change": "Buen tiempo, sin cambios importantes",
+          "sager_unsettled_rain_likely": "Inestable, lluvia probable",
+          "sager_unsettled_probably_improving": "Inestable, probable mejora",
+          "sager_unsettled_rain_at_times": "Inestable, lluvia a intervalos",
+          "sager_changeable_becoming_fairer": "Variable, mejorando",
+          "sager_changeable_becoming_more_unsettled": "Variable, más inestable",
+          "sager_variable_slowly_improving": "Variable, mejorando lentamente",
+          "sager_variable_slowly_deteriorating": "Variable, empeorando lentamente",
+          "sager_variable_some_change": "Variable, se esperan cambios"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nastavení meteorologické stanice",
+        "description": "Vyberte senzory pro váš předpovědní model.",
+        "data": {
+          "pressure_sensor": "Senzor tlaku",
+          "wind_sensor": "Senzor směru větru (volitelné)",
+          "wind_speed_sensor": "Senzor rychlosti větru (volitelné)",
+          "temperature_sensor": "Senzor teploty (volitelné)",
+          "humidity_sensor": "Senzor vlhkosti (volitelné)",
+          "use_sea_level_correction": "Povolit korekci tlaku na hladinu moře",
+          "location": "Poloha"
+        },
+        "data_description": {
+          "pressure_sensor": "Vyberte barometrický senzor tlaku",
+          "wind_sensor": "Volitelné: senzor směru větru (ve stupních)",
+          "wind_speed_sensor": "Volitelné: samostatný senzor rychlosti větru",
+          "temperature_sensor": "Volitelné: používá se pro korekci na hladinu moře",
+          "humidity_sensor": "Volitelné: zlepšuje přesnost pravděpodobnosti srážek",
+          "use_sea_level_correction": "Povolte při použití absolutního senzoru nad hladinou moře",
+          "location": "Klikněte na mapu pro výpočet nadmořské výšky"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Připojení selhalo",
+      "unknown": "Neočekávaná chyba"
+    },
+    "abort": {
+      "already_configured": "Tato meteorologická stanice je již nakonfigurována"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Upravit senzory",
+        "description": "Aktualizujte senzory pro výpočty Zambretti a Sager.",
+        "data": {
+          "pressure_sensor": "Senzor tlaku",
+          "wind_sensor": "Senzor směru větru (volitelné)",
+          "wind_speed_sensor": "Senzor rychlosti větru (volitelné)",
+          "temperature_sensor": "Senzor teploty (volitelné)",
+          "humidity_sensor": "Senzor vlhkosti (volitelné)",
+          "use_sea_level_correction": "Povolit korekci tlaku na hladinu moře",
+          "location": "Poloha"
+        },
+        "data_description": {
+          "pressure_sensor": "Vyberte barometrický senzor tlaku",
+          "wind_sensor": "Volitelné: senzor směru větru (ve stupních)",
+          "wind_speed_sensor": "Volitelné: samostatný senzor rychlosti větru",
+          "temperature_sensor": "Volitelné: používá se pro korekci na hladinu moře",
+          "humidity_sensor": "Volitelné: zlepšuje přesnost pravděpodobnosti srážek",
+          "use_sea_level_correction": "Povolte při použití absolutního senzoru nad hladinou moře",
+          "location": "Klikněte na mapu pro výpočet nadmořské výšky"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zambretti_forecast": {
+        "state": {
+          "settled_fine": "Pěkně, stabilně",
+          "fine_weather": "Pěkné počasí",
+          "fine_becoming_less_settled": "Pěkně, méně stabilně",
+          "fairly_fine_showery_later": "Docela pěkně, přeháňky později",
+          "showery_becoming_more_unsettled": "Přeháňky, zhoršení",
+          "unsettled_rain_later": "Nestabilně, déšť později",
+          "rain_at_times_worse_later": "Déšť, později hůř",
+          "rain_at_times_becoming_very_unsettled": "Déšť, velmi nestabilně",
+          "very_unsettled_rain": "Velmi nestabilně, déšť",
+          "fine_possibly_showers": "Pěkně, možné přeháňky",
+          "fairly_fine_showers_likely": "Docela pěkně, přeháňky pravděpodobné",
+          "showery_bright_intervals": "Přeháňky, protrhávání",
+          "changeable_some_rain": "Proměnlivě, trochu deště",
+          "unsettled_rain_at_times": "Nestabilně, občas déšť",
+          "rain_at_frequent_intervals": "Častý déšť",
+          "stormy_much_rain": "Bouřlivě, hodně deště",
+          "becoming_fine": "Zlepšuje se",
+          "fairly_fine_improving": "Docela pěkně, zlepšení",
+          "fairly_fine_possibly_showers_early": "Docela pěkně, brzké přeháňky",
+          "showery_early_improving": "Brzké přeháňky, zlepšení",
+          "changeable_mending": "Proměnlivě, zlepšení",
+          "rather_unsettled_clearing_later": "Spíše nestabilně, později protrhávání",
+          "unsettled_probably_improving": "Nestabilně, pravděpodobně zlepšení",
+          "unsettled_short_fine_intervals": "Nestabilně, krátké protrhávání",
+          "very_unsettled_finer_at_times": "Velmi nestabilně, občas lépe",
+          "stormy_possibly_improving": "Bouřlivě, možné zlepšení",
+          "stable": "Stabilně"
+        }
+      },
+      "sager_forecast": {
+        "state": {
+          "sager_fair_improving": "Pěkné počasí, zlepšení",
+          "sager_fair_tending_to_deteriorate": "Pěkně, tendence ke zhoršení",
+          "sager_fair_no_change": "Pěkné počasí, bez významné změny",
+          "sager_unsettled_rain_likely": "Nestabilně, déšť pravděpodobný",
+          "sager_unsettled_probably_improving": "Nestabilně, pravděpodobně zlepšení",
+          "sager_unsettled_rain_at_times": "Nestabilně, občas déšť",
+          "sager_changeable_becoming_fairer": "Proměnlivě, zlepšuje se",
+          "sager_changeable_becoming_more_unsettled": "Proměnlivě, nestabilnější",
+          "sager_variable_slowly_improving": "Proměnlivě, pomalé zlepšení",
+          "sager_variable_slowly_deteriorating": "Proměnlivě, pomalé zhoršení",
+          "sager_variable_some_change": "Proměnlivě, očekávána změna"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Налаштування метеостанції",
+        "description": "Виберіть датчики для моделі прогнозування.",
+        "data": {
+          "pressure_sensor": "Датчик тиску",
+          "wind_sensor": "Датчик напрямку вітру (необов'язково)",
+          "wind_speed_sensor": "Датчик швидкості вітру (необов'язково)",
+          "temperature_sensor": "Датчик температури (необов'язково)",
+          "humidity_sensor": "Датчик вологості (необов'язково)",
+          "use_sea_level_correction": "Увімкнути корекцію тиску до рівня моря",
+          "location": "Розташування"
+        },
+        "data_description": {
+          "pressure_sensor": "Виберіть датчик атмосферного тиску",
+          "wind_sensor": "Необов'язково: датчик напрямку вітру (у градусах)",
+          "wind_speed_sensor": "Необов'язково: окремий датчик швидкості вітру",
+          "temperature_sensor": "Необов'язково: для корекції до рівня моря",
+          "humidity_sensor": "Необов'язково: покращує точність ймовірності опадів",
+          "use_sea_level_correction": "Увімкніть, якщо використовуєте абсолютний датчик тиску над рівнем моря",
+          "location": "Натисніть на карту для розрахунку висоти"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не вдалося підключитися",
+      "unknown": "Несподівана помилка"
+    },
+    "abort": {
+      "already_configured": "Цю метеостанцію вже налаштовано"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Налаштувати датчики",
+        "description": "Оновіть датчики для розрахунків Zambretti та Sager.",
+        "data": {
+          "pressure_sensor": "Датчик тиску",
+          "wind_sensor": "Датчик напрямку вітру (необов'язково)",
+          "wind_speed_sensor": "Датчик швидкості вітру (необов'язково)",
+          "temperature_sensor": "Датчик температури (необов'язково)",
+          "humidity_sensor": "Датчик вологості (необов'язково)",
+          "use_sea_level_correction": "Увімкнути корекцію тиску до рівня моря",
+          "location": "Розташування"
+        },
+        "data_description": {
+          "pressure_sensor": "Виберіть датчик атмосферного тиску",
+          "wind_sensor": "Необов'язково: датчик напрямку вітру (у градусах)",
+          "wind_speed_sensor": "Необов'язково: окремий датчик швидкості вітру",
+          "temperature_sensor": "Необов'язково: для корекції до рівня моря",
+          "humidity_sensor": "Необов'язково: покращує точність ймовірності опадів",
+          "use_sea_level_correction": "Увімкніть, якщо використовуєте абсолютний датчик тиску над рівнем моря",
+          "location": "Натисніть на карту для розрахунку висоти"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zambretti_forecast": {
+        "state": {
+          "settled_fine": "Ясно, стабільно",
+          "fine_weather": "Гарна погода",
+          "fine_becoming_less_settled": "Добре, можливе погіршення",
+          "fairly_fine_showery_later": "Досить добре, згодом дощі",
+          "showery_becoming_more_unsettled": "Дощово, погіршення",
+          "unsettled_rain_later": "Нестабільно, дощ пізніше",
+          "rain_at_times_worse_later": "Дощі, погіршення пізніше",
+          "rain_at_times_becoming_very_unsettled": "Дощі, дуже нестабільно",
+          "very_unsettled_rain": "Дуже нестабільно, дощ",
+          "fine_possibly_showers": "Добре, можливі зливи",
+          "fairly_fine_showers_likely": "Досить добре, зливи ймовірні",
+          "showery_bright_intervals": "Зливи, прояснення",
+          "changeable_some_rain": "Мінлива, невеликий дощ",
+          "unsettled_rain_at_times": "Нестабільно, дощі періодично",
+          "rain_at_frequent_intervals": "Часті дощі",
+          "stormy_much_rain": "Штормово, сильні дощі",
+          "becoming_fine": "Покращення погоди",
+          "fairly_fine_improving": "Досить добре, покращення",
+          "fairly_fine_possibly_showers_early": "Досить добре, ранні зливи",
+          "showery_early_improving": "Ранні зливи, покращення",
+          "changeable_mending": "Мінлива, покращується",
+          "rather_unsettled_clearing_later": "Нестабільно, прояснення пізніше",
+          "unsettled_probably_improving": "Нестабільно, ймовірне покращення",
+          "unsettled_short_fine_intervals": "Нестабільно, короткі прояснення",
+          "very_unsettled_finer_at_times": "Дуже нестабільно, часом краще",
+          "stormy_possibly_improving": "Штормово, можливе покращення",
+          "stable": "Стабільно"
+        }
+      },
+      "sager_forecast": {
+        "state": {
+          "sager_fair_improving": "Гарна погода, покращення",
+          "sager_fair_tending_to_deteriorate": "Поки добре, очікується погіршення",
+          "sager_fair_no_change": "Гарна погода, без змін",
+          "sager_unsettled_rain_likely": "Нестабільно, дощ ймовірний",
+          "sager_unsettled_probably_improving": "Нестабільно, ймовірне покращення",
+          "sager_unsettled_rain_at_times": "Нестабільно, дощі періодично",
+          "sager_changeable_becoming_fairer": "Мінлива, прояснення",
+          "sager_changeable_becoming_more_unsettled": "Мінлива, погіршення",
+          "sager_variable_slowly_improving": "Змінна, повільне покращення",
+          "sager_variable_slowly_deteriorating": "Змінна, повільне погіршення",
+          "sager_variable_some_change": "Змінна, очікуються зміни"
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@
         "data": {
           "pressure_sensor": "Capteur de pression",
           "wind_sensor": "Capteur de direction du vent (optionnel)",
+          "wind_speed_sensor": "Capteur de vitesse du vent (optionnel)",
           "temperature_sensor": "Capteur de température (optionnel)",
           "humidity_sensor": "Capteur d'humidité (optionnel)",
           "use_sea_level_correction": "Activer la correction de pression au niveau de la mer",
@@ -15,6 +16,7 @@
         "data_description": {
           "pressure_sensor": "Sélectionnez votre capteur de pression barométrique",
           "wind_sensor": "Optionnel : capteur de direction du vent (en degrés)",
+          "wind_speed_sensor": "Optionnel : capteur de vitesse du vent dédié",
           "temperature_sensor": "Optionnel : utilisé pour la correction de la pression au niveau de la mer",
           "humidity_sensor": "Optionnel : améliore la précision de la probabilité de précipitations",
           "use_sea_level_correction": "À activer si vous utilisez un capteur de pression absolue situé au-dessus du niveau de la mer",
@@ -38,6 +40,7 @@
         "data": {
           "pressure_sensor": "Capteur de pression",
           "wind_sensor": "Capteur de direction du vent (optionnel)",
+          "wind_speed_sensor": "Capteur de vitesse du vent (optionnel)",
           "temperature_sensor": "Capteur de température (optionnel)",
           "humidity_sensor": "Capteur d'humidité (optionnel)",
           "use_sea_level_correction": "Activer la correction de pression au niveau de la mer",
@@ -46,6 +49,7 @@
         "data_description": {
           "pressure_sensor": "Sélectionnez votre capteur de pression barométrique",
           "wind_sensor": "Optionnel : capteur de direction du vent (en degrés)",
+          "wind_speed_sensor": "Optionnel : capteur de vitesse du vent dédié",
           "temperature_sensor": "Optionnel : utilisé pour la correction de la pression au niveau de la mer",
           "humidity_sensor": "Optionnel : améliore la précision de la probabilité de précipitations",
           "use_sea_level_correction": "À activer si vous utilisez un capteur de pression absolue situé au-dessus du niveau de la mer",

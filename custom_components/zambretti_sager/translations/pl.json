@@ -1,0 +1,111 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Konfiguracja stacji pogodowej",
+        "description": "Wybierz czujniki dla modelu prognozowania.",
+        "data": {
+          "pressure_sensor": "Czujnik ciśnienia",
+          "wind_sensor": "Czujnik kierunku wiatru (opcjonalnie)",
+          "wind_speed_sensor": "Czujnik prędkości wiatru (opcjonalnie)",
+          "temperature_sensor": "Czujnik temperatury (opcjonalnie)",
+          "humidity_sensor": "Czujnik wilgotności (opcjonalnie)",
+          "use_sea_level_correction": "Włącz korekcję ciśnienia na poziom morza",
+          "location": "Lokalizacja"
+        },
+        "data_description": {
+          "pressure_sensor": "Wybierz czujnik ciśnienia barometrycznego",
+          "wind_sensor": "Opcjonalnie: czujnik kierunku wiatru (w stopniach)",
+          "wind_speed_sensor": "Opcjonalnie: osobny czujnik prędkości wiatru",
+          "temperature_sensor": "Opcjonalnie: używany do korekcji na poziom morza",
+          "humidity_sensor": "Opcjonalnie: poprawia dokładność prawdopodobieństwa opadów",
+          "use_sea_level_correction": "Włącz przy czujniku ciśnienia bezwzględnego powyżej poziomu morza",
+          "location": "Kliknij na mapie, aby obliczyć wysokość"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie udało się połączyć",
+      "unknown": "Nieoczekiwany błąd"
+    },
+    "abort": {
+      "already_configured": "Ta stacja pogodowa jest już skonfigurowana"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dostosuj czujniki",
+        "description": "Zaktualizuj czujniki używane do obliczeń Zambretti i Sager.",
+        "data": {
+          "pressure_sensor": "Czujnik ciśnienia",
+          "wind_sensor": "Czujnik kierunku wiatru (opcjonalnie)",
+          "wind_speed_sensor": "Czujnik prędkości wiatru (opcjonalnie)",
+          "temperature_sensor": "Czujnik temperatury (opcjonalnie)",
+          "humidity_sensor": "Czujnik wilgotności (opcjonalnie)",
+          "use_sea_level_correction": "Włącz korekcję ciśnienia na poziom morza",
+          "location": "Lokalizacja"
+        },
+        "data_description": {
+          "pressure_sensor": "Wybierz czujnik ciśnienia barometrycznego",
+          "wind_sensor": "Opcjonalnie: czujnik kierunku wiatru (w stopniach)",
+          "wind_speed_sensor": "Opcjonalnie: osobny czujnik prędkości wiatru",
+          "temperature_sensor": "Opcjonalnie: używany do korekcji na poziom morza",
+          "humidity_sensor": "Opcjonalnie: poprawia dokładność prawdopodobieństwa opadów",
+          "use_sea_level_correction": "Włącz przy czujniku ciśnienia bezwzględnego powyżej poziomu morza",
+          "location": "Kliknij na mapie, aby obliczyć wysokość"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zambretti_forecast": {
+        "state": {
+          "settled_fine": "Ładna, stabilna pogoda",
+          "fine_weather": "Ładna pogoda",
+          "fine_becoming_less_settled": "Ładnie, mniej stabilnie",
+          "fairly_fine_showery_later": "Dość ładnie, później przelotne",
+          "showery_becoming_more_unsettled": "Przelotne, pogorszenie",
+          "unsettled_rain_later": "Niestabilnie, później deszcz",
+          "rain_at_times_worse_later": "Deszcz, później gorzej",
+          "rain_at_times_becoming_very_unsettled": "Deszcz, bardzo niestabilnie",
+          "very_unsettled_rain": "Bardzo niestabilnie, deszcz",
+          "fine_possibly_showers": "Ładnie, możliwe przelotne",
+          "fairly_fine_showers_likely": "Dość ładnie, przelotne prawdopodobne",
+          "showery_bright_intervals": "Przelotne, przejaśnienia",
+          "changeable_some_rain": "Zmiennie, odrobinę deszczu",
+          "unsettled_rain_at_times": "Niestabilnie, deszcz okresami",
+          "rain_at_frequent_intervals": "Częsty deszcz",
+          "stormy_much_rain": "Burzowo, dużo deszczu",
+          "becoming_fine": "Poprawa pogody",
+          "fairly_fine_improving": "Dość ładnie, poprawa",
+          "fairly_fine_possibly_showers_early": "Dość ładnie, wczesne przelotne",
+          "showery_early_improving": "Wczesne przelotne, poprawa",
+          "changeable_mending": "Zmiennie, poprawa",
+          "rather_unsettled_clearing_later": "Niestabilnie, później przejaśnienia",
+          "unsettled_probably_improving": "Niestabilnie, prawdopodobna poprawa",
+          "unsettled_short_fine_intervals": "Niestabilnie, krótkie przejaśnienia",
+          "very_unsettled_finer_at_times": "Bardzo niestabilnie, chwilami lepiej",
+          "stormy_possibly_improving": "Burzowo, możliwa poprawa",
+          "stable": "Stabilnie"
+        }
+      },
+      "sager_forecast": {
+        "state": {
+          "sager_fair_improving": "Ładna pogoda, poprawa",
+          "sager_fair_tending_to_deteriorate": "Ładna pogoda, tendencja do pogorszenia",
+          "sager_fair_no_change": "Ładna pogoda, bez istotnych zmian",
+          "sager_unsettled_rain_likely": "Niestabilnie, deszcz prawdopodobny",
+          "sager_unsettled_probably_improving": "Niestabilnie, prawdopodobna poprawa",
+          "sager_unsettled_rain_at_times": "Niestabilnie, deszcz okresami",
+          "sager_changeable_becoming_fairer": "Zmiennie, poprawa",
+          "sager_changeable_becoming_more_unsettled": "Zmiennie, bardziej niestabilnie",
+          "sager_variable_slowly_improving": "Zmiennie, powolna poprawa",
+          "sager_variable_slowly_deteriorating": "Zmiennie, powolne pogorszenie",
+          "sager_variable_some_change": "Zmiennie, oczekiwane zmiany"
+        }
+      }
+    }
+  }
+}
