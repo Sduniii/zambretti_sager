@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.9.7] — 2026-06-21
+
+### Fixed
+- **Sun animation jitter** — disc and rays are now wrapped in a single `<g>` with one `animateTransform rotate calcMode="linear"`, so the whole icon rotates smoothly without stuttering
+
+### Added
+- **Wind speed sensor support** — optional dedicated wind speed sensor (`entity_wind_speed`) selectable in card settings; falls back to the `wind_speed` attribute of the main sensor when not set
+- **Wind unit selector** — choose `m/s`, `km/h`, or `mph` in card settings; automatic conversion applied
+- **Animated weather icons (full rework)**:
+  - ☁️ Cloudy — clouds drift horizontally with `calcMode="linear"` (no jitter)
+  - 🌧 Rainy / Pouring — drops rendered as animated `<line>` elements (y1/y2 + opacity), much more realistic
+  - ❄️ Snowy — snowflakes fall top-to-bottom with `calcMode="linear"`, staggered timing
+  - ⚡ Lightning — double-flash pattern (`1;0.2;1;0.2;1`)
+  - 💨 Windy — three sinusoidal wave paths animate in sync with `calcMode="linear"`
+  - 🌤 Partly cloudy — sun rotates independently, cloud drifts separately
+
+---
+
 ## [1.9.6] — 2026-06-21
 
 ### Added
