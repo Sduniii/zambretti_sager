@@ -328,29 +328,41 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         return None
 
     async def _fetch_pressure_sparkline(self) -> list[float] | None:
-        """Получить ~24 точки давления за последние 24 часа для sparkline."""
+        """Получить 24 точки давления (по одной в час) за последние 24 часа."""
         now = dt_util.utcnow()
-        start_time = now - datetime.timedelta(hours=24)
+        # Запрашиваем точку за каждый час — 24 параллельных запроса
+        # range(23, -1, -1) → 23h назад ... 0h (сейчас)
+        tasks = [
+            self._get_history_pressure(h, now)
+            for h in range(23, -1, -1)
+        ]
+        results = await asyncio.gather(*tasks)
+
+        # Текущее давление берём напрямую из сенсора
         try:
-            events = await asyncio.wait_for(
-                get_instance(self.hass).async_add_executor_job(
-                    history.get_significant_states,
-                    self.hass,
-                    start_time,
-                    now,
-                    [self.pressure_id],
-                ),
-                timeout=30.0,
-            )
-            if self.pressure_id in events and events[self.pressure_id]:
-                # Берём до 24 точек равномерно
-                points = [self._correct_pressure(parse_pressure_hpa_from_history(s)) for s in events[self.pressure_id]]
-                # Сэмплируем до 24 точек
-                step = max(1, len(points) // 24)
-                return points[::step][:24]
+            p_current = parse_pressure_hpa(self.hass.states.get(self.pressure_id))
+            p_current = self._correct_pressure(p_current)
         except Exception:
-            _LOGGER.exception("Error fetching pressure sparkline for %s", self.pressure_id)
-        return None
+            p_current = None
+
+        # Подставляем текущее давление в позицию «0 часов назад»
+        result_list = list(results)
+        if result_list and result_list[-1] is None and p_current is not None:
+            result_list[-1] = p_current
+
+        # Forward-fill: заполняем None ближайшим предыдущим известным значением
+        last_known: float | None = None
+        filled: list[float | None] = []
+        for val in result_list:
+            if val is not None:
+                last_known = val
+            filled.append(last_known)
+
+        # Убираем None в начале (нет истории старше N часов)
+        clean = [v for v in filled if v is not None]
+        if len(clean) < 2:
+            return None
+        return [round(v, 1) for v in clean]
 
 
 async def async_create_coordinator(
