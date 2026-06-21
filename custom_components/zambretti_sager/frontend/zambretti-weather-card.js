@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.5
+ * Zambretti & Sager Weather Card  v1.9.6
  * Lovelace custom card for Home Assistant
  */
 
@@ -71,6 +71,31 @@ const LABELS_RU = {
   sager_variable_slowly_improving:"Переменно, медленное улучшение",
   sager_variable_slowly_deteriorating:"Переменно, медленное ухудшение",
   sager_variable_some_change:"Переменно, ожидаются изменения",
+};
+const LABELS_FR = {
+  settled_fine:"Beau temps stable", fine_weather:"Beau temps",
+  fine_becoming_less_settled:"Beau temps, moins stable", fairly_fine_showery_later:"Assez beau, averses plus tard",
+  showery_becoming_more_unsettled:"Averses, aggravation", unsettled_rain_later:"Perturbé, pluie plus tard",
+  rain_at_times_worse_later:"Pluie, aggravation", rain_at_times_becoming_very_unsettled:"Pluie, très perturbé",
+  very_unsettled_rain:"Très perturbé, pluie", fine_possibly_showers:"Beau, averses possibles",
+  fairly_fine_showers_likely:"Assez beau, averses probables", showery_bright_intervals:"Averses, éclaircies",
+  changeable_some_rain:"Variable, quelques pluies", unsettled_rain_at_times:"Perturbé, pluie par moments",
+  rain_at_frequent_intervals:"Pluies fréquentes", stormy_much_rain:"Orageux, fortes pluies",
+  becoming_fine:"Amélioration", fairly_fine_improving:"Assez beau, amélioration",
+  fairly_fine_possibly_showers_early:"Assez beau, averses tôt", showery_early_improving:"Averses tôt, amélioration",
+  changeable_mending:"Variable, amélioration", rather_unsettled_clearing_later:"Perturbé, éclaircies plus tard",
+  unsettled_probably_improving:"Perturbé, amélioration probable", unsettled_short_fine_intervals:"Perturbé, courtes éclaircies",
+  very_unsettled_finer_at_times:"Très perturbé, accalmies", stormy_possibly_improving:"Orageux, amélioration possible",
+  stable:"Stable",
+  sager_fair_improving:"Beau temps, amélioration", sager_fair_tending_to_deteriorate:"Beau temps, tendance à la dégradation",
+  sager_fair_no_change:"Beau temps, pas de changement", sager_unsettled_rain_likely:"Perturbé, pluie probable",
+  sager_unsettled_probably_improving:"Perturbé, amélioration probable",
+  sager_unsettled_rain_at_times:"Perturbé, pluie par moments",
+  sager_changeable_becoming_fairer:"Variable, tendance à l'amélioration",
+  sager_changeable_becoming_more_unsettled:"Variable, devenant plus perturbé",
+  sager_variable_slowly_improving:"Variable, amélioration progressive",
+  sager_variable_slowly_deteriorating:"Variable, dégradation progressive",
+  sager_variable_some_change:"Variable, changement attendu",
 };
 
 // ── SVG weather icons ─────────────────────────────────────────────────────
@@ -351,7 +376,9 @@ class ZambrettiWeatherCard extends HTMLElement {
   _labels() {
     const lang = this._config.language==="auto"
       ? (this._hass?.language||"en") : this._config.language;
-    return lang.startsWith("ru") ? LABELS_RU : LABELS_EN;
+    if (lang.startsWith("ru")) return LABELS_RU;
+    if (lang.startsWith("fr")) return LABELS_FR;
+    return LABELS_EN;
   }
 
   _isRu(){ return this._labels()===LABELS_RU; }
@@ -666,8 +693,10 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
 
   _render() {
     const c=this._config;
-    const isRu = (c.language||"auto")==="ru" ||
-      ((c.language||"auto")==="auto" && (this._hass?.language||"en").startsWith("ru"));
+    const lang = c.language || "auto";
+    const hLang = this._hass?.language || "en";
+    const isRu = lang === "ru" || (lang === "auto" && hLang.startsWith("ru"));
+    const isFr = lang === "fr" || (lang === "auto" && hLang.startsWith("fr"));
     const t = isRu ? {
       appearance:   "Внешний вид",
       language:     "Язык",
@@ -684,6 +713,22 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       autoThemeH:   "Цвет фона меняется по текущему условию",
       customBg:     "Свой фон карточки",
       customBgH:    "CSS-градиент или цвет, напр. #1a1a2e или linear-gradient(...)",
+    } : isFr ? {
+      appearance:   "Apparence",
+      language:     "Langue",
+      langAuto:     "Auto (depuis Home Assistant)",
+      compact:      "Mode compact",
+      compactHint:  "Carte plus petite pour les colonnes étroites",
+      showSager:    "Afficher la prévision Sager",
+      showSagerH:   "Bandeau inférieur avec l'analyse Sager",
+      showPrecip:   "Afficher les précipitations",
+      showPrecipH:  "Jauge circulaire à droite",
+      showForecasts:"Afficher les prévisions 6h / 12h / 24h",
+      showForecastH:"Rangée inférieure avec les icônes de prévision",
+      autoTheme:    "Thème automatique selon la météo",
+      autoThemeH:   "La couleur de fond suit la condition météo actuelle",
+      customBg:     "Fond personnalisé",
+      customBgH:    "Dégradé CSS ou couleur, ex. #1a1a2e ou linear-gradient(...)",
     } : {
       appearance:   "Appearance",
       language:     "Language",
@@ -770,9 +815,10 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       <div class="lang-row">
         <label>${t.language}</label>
         <select id="sel-lang">
-          <option value="auto" ${(c.language||"auto")==="auto"?"selected":""}>${t.langAuto}</option>
-          <option value="en"   ${c.language==="en"?"selected":""}>English</option>
-          <option value="ru"   ${c.language==="ru"?"selected":""}>Русский</option>
+          <option value="auto" ${lang==="auto"?"selected":""}>${t.langAuto}</option>
+          <option value="en"   ${lang==="en"?"selected":""}>English</option>
+          <option value="fr"   ${lang==="fr"?"selected":""}>Français</option>
+          <option value="ru"   ${lang==="ru"?"selected":""}>Русский</option>
         </select>
       </div>
 
