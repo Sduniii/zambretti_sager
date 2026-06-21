@@ -92,14 +92,28 @@ class JSModuleRegistration:
             _LOGGER.debug("Static path already registered: %s", URL_BASE)
 
     async def _async_wait_for_lovelace_resources(self) -> None:
-        """Wait until Lovelace resources collection is loaded."""
+        """Wait until Lovelace resources collection is loaded (max 10 retries)."""
+
+        self._lovelace_retries = 0
 
         async def _check(_now: Any) -> None:
             if self.lovelace.resources.loaded:
                 await self._async_register_modules()
-            else:
-                _LOGGER.debug("Lovelace resources not loaded yet, retrying in 5s")
-                async_call_later(self.hass, 5, _check)
+                return
+            self._lovelace_retries += 1
+            if self._lovelace_retries >= 10:
+                _LOGGER.warning(
+                    "Lovelace resources did not load after 10 attempts — "
+                    "add resource manually: "
+                    "Settings → Dashboards → Resources → %s/zambretti-weather-card.js",
+                    URL_BASE,
+                )
+                return
+            _LOGGER.debug(
+                "Lovelace resources not loaded yet, retrying in 5s (attempt %d/10)",
+                self._lovelace_retries,
+            )
+            async_call_later(self.hass, 5, _check)
 
         await _check(0)
 

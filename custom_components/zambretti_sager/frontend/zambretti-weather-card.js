@@ -147,6 +147,9 @@ function shortLabel(key, labels) {
   return full.split(/[,\s]+/).filter(Boolean).slice(0,2).join(" ");
 }
 
+// ── Unique ID counter for SVG gradients ──────────────────────────────────
+let _gradientIdCounter = 0;
+
 // ── Precipitation SVG ─────────────────────────────────────────────────────
 function precipWidget(pct) {
   // viewBox 120×110 — подкова занимает почти весь блок
@@ -158,7 +161,7 @@ function precipWidget(pct) {
   const rot=-225;
 
   const fillColor = pct<30 ? "#90CAF9" : pct<60 ? "#42A5F5" : "#1565C0";
-  const gid="pw"+(Math.random()*1e6|0);
+  const gid="pw"+(++_gradientIdCounter);
 
   return `<svg viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
     <defs>

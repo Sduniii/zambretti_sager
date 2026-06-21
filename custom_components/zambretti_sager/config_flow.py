@@ -74,7 +74,9 @@ class ZambrettiSagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             user_input = _normalize_optional_entities(_apply_location(user_input))
 
-            await self.async_set_unique_id(user_input[CONF_PRESSURE_SENSOR])
+            # Используем entity_id датчика давления как unique_id,
+            # чтобы предотвратить дублирование одного сенсора в двух экземплярах
+            await self.async_set_unique_id(f"{DOMAIN}_{user_input[CONF_PRESSURE_SENSOR]}")
             self._abort_if_unique_id_configured()
 
             return self.async_create_entry(title="Weather Forecaster", data=user_input)

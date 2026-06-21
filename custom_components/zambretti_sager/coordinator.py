@@ -271,28 +271,32 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
 
     async def _fetch_history_pressures(self) -> dict[int, float | None]:
         """Параллельно получить давление 3, 6 и 12 часов назад."""
+        now = dt_util.utcnow()
         results = await asyncio.gather(
-            *(self._get_history_pressure(hours) for hours in HISTORY_HOURS)
+            *(self._get_history_pressure(hours, now) for hours in HISTORY_HOURS)
         )
         return dict(zip(HISTORY_HOURS, results))
 
-    async def _get_history_pressure(self, hours: int) -> float | None:
+    async def _get_history_pressure(self, hours: int, now) -> float | None:
         """Получить давление N часов назад через recorder.
 
         Ищет состояние, ближайшее к целевому времени (N часов назад),
         с окном ±15 минут. Если точное совпадение не найдено — возвращает None.
         """
-        target_time = dt_util.utcnow() - datetime.timedelta(hours=hours)
+        target_time = now - datetime.timedelta(hours=hours)
         window = datetime.timedelta(minutes=15)
         start_time = target_time - window
         end_time = target_time + window
         try:
-            events = await get_instance(self.hass).async_add_executor_job(
-                history.get_significant_states,
-                self.hass,
-                start_time,
-                end_time,
-                [self.pressure_id],
+            events = await asyncio.wait_for(
+                get_instance(self.hass).async_add_executor_job(
+                    history.get_significant_states,
+                    self.hass,
+                    start_time,
+                    end_time,
+                    [self.pressure_id],
+                ),
+                timeout=30.0,
             )
             if self.pressure_id in events and events[self.pressure_id]:
                 # Найти состояние, ближайшее к target_time
