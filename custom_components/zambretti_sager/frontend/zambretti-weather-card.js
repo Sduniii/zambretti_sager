@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.4
+ * Zambretti & Sager Weather Card  v1.9.5
  * Lovelace custom card for Home Assistant
  */
 
@@ -78,14 +78,17 @@ const WEATHER_ICONS = {
   sunny:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <circle cx="32" cy="32" r="12" fill="#FFD700"><animate attributeName="r" values="12;13.5;12" dur="3s" repeatCount="indefinite"/></circle>
     <g stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" opacity="0.85">
-      <line x1="32" y1="8" x2="32" y2="14"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
-      <line x1="32" y1="50" x2="32" y2="56"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
-      <line x1="8" y1="32" x2="14" y2="32"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
-      <line x1="50" y1="32" x2="56" y2="32"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
-      <line x1="14.9" y1="14.9" x2="19.3" y2="19.3"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
-      <line x1="44.7" y1="44.7" x2="49.1" y2="49.1"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
-      <line x1="49.1" y1="14.9" x2="44.7" y2="19.3"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
-      <line x1="19.3" y1="44.7" x2="14.9" y2="49.1"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/></line>
+      <g>
+        <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="20s" repeatCount="indefinite" calcMode="linear"/>
+        <line x1="32" y1="8" x2="32" y2="14"/>
+        <line x1="32" y1="50" x2="32" y2="56"/>
+        <line x1="8" y1="32" x2="14" y2="32"/>
+        <line x1="50" y1="32" x2="56" y2="32"/>
+        <line x1="14.9" y1="14.9" x2="19.3" y2="19.3"/>
+        <line x1="44.7" y1="44.7" x2="49.1" y2="49.1"/>
+        <line x1="49.1" y1="14.9" x2="44.7" y2="19.3"/>
+        <line x1="19.3" y1="44.7" x2="14.9" y2="49.1"/>
+      </g>
     </g></svg>`,
   partlycloudy:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <circle cx="22" cy="26" r="9" fill="#FFD700" opacity="0.9"><animate attributeName="cy" values="26;24;26" dur="4s" repeatCount="indefinite"/></circle>
