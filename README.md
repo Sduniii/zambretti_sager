@@ -1,24 +1,53 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.9.4-blue.svg)
+![Version](https://img.shields.io/badge/version-1.9.5-blue.svg)
+[![Install with HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ziffmafiya&repository=zambretti_sager&category=integration)
+[![Open in Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zambretti_sager)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
-<img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png" alt="Zambretti & Sager Logo" width="400">
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/logo.png" alt="Zambretti & Sager Logo" width="400">
+</p>
 
-## 🎉 What's New in v1.9.0
+---
 
-- **Sunny theme** — warm orange gradient for sunny conditions (like iOS Weather app), instead of blue
-- **Custom card background** — new toggle in card settings: when disabled, you can pick any background color or CSS gradient for the card
-- **Live color preview** — color picker updates the card in real time without closing the picker
-- **Compact mode removed** — simplified card editor
+## 🚀 Quick Install
 
-## Previous: v1.4.0
+Click the button below to install directly via HACS:
 
-- **Localization support** — the setup UI now automatically adapts to your Home Assistant language. English and Russian are fully supported. Change your language in your HA profile and the integration follows.
-- **Removed built-in card** — the Zambretti Barometer Card has been removed from the integration. Use standard Lovelace cards or any community card to display your sensors.
-- **Cleaner codebase** — removed unused frontend and HTTP dependencies.
+[![Install with HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ziffmafiya&repository=zambretti_sager&category=integration)
+
+Or open HACS → **Integrations** → **Custom repositories** → add `https://github.com/ziffmafiya/zambretti_sager` (category: Integration).
+
+After installation, click here to start setup:
+
+[![Open in Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zambretti_sager)
+
+---
+
+## 🎉 What's New in v1.9.5
+
+### ✨ New Features
+- **📈 Pressure Sparkline** — mini pressure chart for the last 24 hours (green = rising, red = falling) shown right on the card
+- **🌙 Night Mode** — automatically switches to a crescent moon icon with twinkling stars and a dark blue gradient when it's dark outside
+- **💨 Wind Speed Support** — optional wind speed sensor; shows direction + speed (e.g. `SW 5.2 m/s`) in the card footer
+- **🎨 Animated Weather Icons** — clouds drift sideways, snowflakes fall, wind lines wave; all SVG animations are smooth and continuous
+
+### 🐛 Bugfixes
+- Fixed entity ID conflict when configuring multiple instances
+- Fixed pressure watcher subscription leak on unload
+- Fixed dead code in precipitation probability (humidity ≤30% never worked)
+- Fixed history pressure retrieval (now finds nearest state within ±15 min window)
+- Fixed missing `humidity_sensor` in `strings.json`
+- Fixed infinite retry loop in Lovelace resource registration (max 10 attempts)
+- Fixed recorder queries without timeout (added 30s timeout)
+
+### 🏠 Card Update
+- Updated `zambretti-weather-card.js` with animated icons, night theme, sparkline, and wind display
+
+---
 
 ## Features
 
@@ -29,22 +58,33 @@ A Home Assistant custom integration that provides weather forecasting using the 
 - **Sea Level Pressure Correction** — automatic altitude-based pressure correction for accurate forecasts
 - **Interactive Map Selection** — choose your location on a map for automatic altitude detection
 - **Temperature Compensation** — uses temperature sensor for precise pressure correction
+- **Wind Speed & Direction** — optional wind speed sensor with visualization in the card
+- **Night Mode** — automatic moon/stars icon and dark theme when sun is down
+- **Pressure Sparkline** — 24-hour pressure history chart inside the card
+- **Animated Weather Icons** — drifting clouds, falling snow, waving wind lines
 - **Localization** — English and Russian UI out of the box
 
 ## Installation
 
-### HACS (Recommended)
+### ⚡ One-Click HACS Install
 
-1. Open HACS in Home Assistant
-2. Go to **Integrations**
-3. Click the three dots → **Custom repositories**
-4. Add `https://github.com/ziffmafiya/zambretti_sager` with category **Integration**
-5. Find **Zambretti & Sager Weather Forecaster** and install it
-6. Restart Home Assistant
+[![Install with HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ziffmafiya&repository=zambretti_sager&category=integration)
+
+Then configure:
+
+[![Open in Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zambretti_sager)
+
+### Manual HACS Installation
+
+1. Open HACS → **Integrations**
+2. Click the three dots → **Custom repositories**
+3. Add `https://github.com/ziffmafiya/zambretti_sager` with category **Integration**
+4. Click **Install**
+5. Restart Home Assistant
 
 ### Manual Installation
 
-1. Copy `custom_components/zambretti_sager` to your Home Assistant `custom_components` directory
+1. Copy `custom_components/zambretti_sager` to your HA `custom_components` directory
 2. Restart Home Assistant
 
 ## Configuration
