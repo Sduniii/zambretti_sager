@@ -101,7 +101,6 @@ class ZambrettiSensor(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Zambretti Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti"
-        self.entity_id = "sensor.zambretti_forecast"
 
     @property
     def native_value(self) -> str | None:
@@ -130,7 +129,6 @@ class SagerSensor(WeatherSensorBase):
         super().__init__(coordinator)
         self._attr_name = "Sager Forecast"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_sager"
-        self.entity_id = "sensor.sager_forecast"
 
     @property
     def native_value(self) -> str | None:
@@ -159,7 +157,6 @@ class ZambrettiForecast6h(WeatherSensorBase):
         self._attr_name = "Zambretti Forecast 6h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_6h"
         self._attr_icon = "mdi:weather-partly-cloudy"
-        self.entity_id = "sensor.zambretti_forecast_6h"
 
     @property
     def native_value(self) -> str | None:
@@ -191,7 +188,6 @@ class ZambrettiForecast12h(WeatherSensorBase):
         self._attr_name = "Zambretti Forecast 12h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_12h"
         self._attr_icon = "mdi:weather-cloudy"
-        self.entity_id = "sensor.zambretti_forecast_12h"
 
     @property
     def native_value(self) -> str | None:
@@ -226,7 +222,6 @@ class ZambrettiForecast24h(WeatherSensorBase):
         self._attr_name = "Zambretti Forecast 24h"
         self._attr_unique_id = f"{coordinator.entry.entry_id}_zambretti_24h"
         self._attr_icon = "mdi:weather-sunset"
-        self.entity_id = "sensor.zambretti_forecast_24h"
 
     @property
     def native_value(self) -> str | None:
@@ -271,7 +266,6 @@ class PrecipitationProbability(WeatherSensorBase):
         self._attr_icon = "mdi:water-percent"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_state_class = SensorStateClass.MEASUREMENT
-        self.entity_id = "sensor.precipitation_probability"
 
     @property
     def native_value(self) -> int | None:
@@ -302,8 +296,8 @@ class PrecipitationProbability(WeatherSensorBase):
             if d.humidity >= 90:    humidity_modifier = 15
             elif d.humidity >= 80:  humidity_modifier = 10
             elif d.humidity >= 70:  humidity_modifier = 5
-            elif d.humidity <= 40:  humidity_modifier = -10
             elif d.humidity <= 30:  humidity_modifier = -15
+            elif d.humidity <= 40:  humidity_modifier = -10
 
         return round(max(0, min(100, base_prob + trend_modifier + humidity_modifier)))
 

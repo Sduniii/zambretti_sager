@@ -8,6 +8,7 @@
           "pressure_sensor": "Pressure Sensor",
           "wind_sensor": "Wind Direction Sensor (optional)",
           "temperature_sensor": "Temperature Sensor (optional)",
+          "humidity_sensor": "Humidity Sensor (optional)",
           "use_sea_level_correction": "Enable Sea Level Pressure Correction",
           "location": "Location"
         },
@@ -15,6 +16,7 @@
           "pressure_sensor": "Select your barometric pressure sensor (absolute or sea level pressure)",
           "wind_sensor": "Optional: select your wind direction sensor (in degrees)",
           "temperature_sensor": "Optional: used for accurate sea level pressure correction",
+          "humidity_sensor": "Optional: improves precipitation probability accuracy",
           "use_sea_level_correction": "Enable if using an absolute pressure sensor and located above sea level",
           "location": "Click on the map to select your weather station location for altitude calculation"
         }
@@ -37,6 +39,7 @@
           "pressure_sensor": "Pressure Sensor",
           "wind_sensor": "Wind Direction Sensor (optional)",
           "temperature_sensor": "Temperature Sensor (optional)",
+          "humidity_sensor": "Humidity Sensor (optional)",
           "use_sea_level_correction": "Enable Sea Level Pressure Correction",
           "location": "Location"
         },
@@ -44,6 +47,7 @@
           "pressure_sensor": "Select your barometric pressure sensor (absolute or sea level pressure)",
           "wind_sensor": "Optional: select your wind direction sensor (in degrees)",
           "temperature_sensor": "Optional: used for accurate sea level pressure correction",
+          "humidity_sensor": "Optional: improves precipitation probability accuracy",
           "use_sea_level_correction": "Enable if using an absolute pressure sensor and located above sea level",
           "location": "Click on the map to select your weather station location for altitude calculation"
         }

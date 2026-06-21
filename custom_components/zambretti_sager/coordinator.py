@@ -65,10 +65,34 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         self.altitude = altitude
         self._sea_level_warning_logged = False
         self._unsub_state_listener = None
+        self._last_pressure_id: str | None = None
 
         self.pressure_id = entry.options.get(
             CONF_PRESSURE_SENSOR, entry.data[CONF_PRESSURE_SENSOR]
         )
+        self.wind_id = entry.options.get(CONF_WIND_SENSOR, entry.data.get(CONF_WIND_SENSOR))
+        self.temp_id = entry.options.get(
+            CONF_TEMPERATURE_SENSOR, entry.data.get(CONF_TEMPERATURE_SENSOR)
+        )
+        self.humidity_id = entry.options.get(
+            CONF_HUMIDITY_SENSOR, entry.data.get(CONF_HUMIDITY_SENSOR)
+        )
+        self.use_sea_level = entry.options.get(
+            CONF_USE_SEA_LEVEL, entry.data.get(CONF_USE_SEA_LEVEL, False)
+        )
+
+    def _update_sensor_ids(self) -> None:
+        """Обновить идентификаторы сенсоров из конфигурации при reload."""
+        entry = self.entry
+        new_pressure_id = entry.options.get(
+            CONF_PRESSURE_SENSOR, entry.data[CONF_PRESSURE_SENSOR]
+        )
+        # Если сменился сенсор давления — сбросить флаг предупреждения
+        if new_pressure_id != self._last_pressure_id:
+            self._sea_level_warning_logged = False
+            self._last_pressure_id = new_pressure_id
+
+        self.pressure_id = new_pressure_id
         self.wind_id = entry.options.get(CONF_WIND_SENSOR, entry.data.get(CONF_WIND_SENSOR))
         self.temp_id = entry.options.get(
             CONF_TEMPERATURE_SENSOR, entry.data.get(CONF_TEMPERATURE_SENSOR)
@@ -253,18 +277,34 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         return dict(zip(HISTORY_HOURS, results))
 
     async def _get_history_pressure(self, hours: int) -> float | None:
-        """Получить давление N часов назад через recorder."""
-        start_time = dt_util.utcnow() - datetime.timedelta(hours=hours)
+        """Получить давление N часов назад через recorder.
+
+        Ищет состояние, ближайшее к целевому времени (N часов назад),
+        с окном ±15 минут. Если точное совпадение не найдено — возвращает None.
+        """
+        target_time = dt_util.utcnow() - datetime.timedelta(hours=hours)
+        window = datetime.timedelta(minutes=15)
+        start_time = target_time - window
+        end_time = target_time + window
         try:
             events = await get_instance(self.hass).async_add_executor_job(
                 history.get_significant_states,
                 self.hass,
                 start_time,
-                None,
+                end_time,
                 [self.pressure_id],
             )
             if self.pressure_id in events and events[self.pressure_id]:
-                return parse_pressure_hpa_from_history(events[self.pressure_id][0])
+                # Найти состояние, ближайшее к target_time
+                best = min(
+                    events[self.pressure_id],
+                    key=lambda s: abs(
+                        getattr(s, "last_changed", getattr(s, "last_updated", None)) - target_time
+                        if hasattr(s, "last_changed")
+                        else 0
+                    ),
+                )
+                return parse_pressure_hpa_from_history(best)
         except Exception:
             _LOGGER.exception(
                 "Error fetching pressure history for %s (%sh)",

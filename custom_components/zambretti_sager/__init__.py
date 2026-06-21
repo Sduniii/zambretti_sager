@@ -10,6 +10,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, EVENT_HOMEASSISTANT_STARTED, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
+from typing import Any
+
 from .const import DOMAIN, VERSION
 from .coordinator import async_create_coordinator
 from .frontend import JSModuleRegistration
@@ -87,6 +89,11 @@ async def _update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Выгрузка при удалении entry."""
+    # Остановить подписку на state change, чтобы избежать утечки
+    coordinator: Any = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if coordinator is not None:
+        coordinator._stop_pressure_watcher()  # noqa: SLF001
+
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)

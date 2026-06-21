@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.9.5] — 2026-06-21
+
+### Fixed
+- **Conflict when configuring multiple instances** — removed manual `self.entity_id` assignments from all 6 sensor classes; HA now auto-generates entity IDs from unique IDs
+- **Pressure watcher subscription leak on unload** — `_stop_pressure_watcher()` is now called in `async_unload_entry` to prevent stale callbacks and memory leaks
+- **Dead code in precipitation probability** — humidity `<= 30%` branch was never reached because `<= 40%` was checked first; corrected evaluation order
+- **History pressure retrieval** — now searches within a ±15-minute window and picks the nearest state to the target time instead of the oldest state in the range
+- **Sea-level warning not reset** — `_sea_level_warning_logged` flag is now cleared when the pressure sensor changes in options
+- **Missing `humidity_sensor` in `strings.json`** — added the field to config and options flows so it appears in HA UI for non-English languages
+- **Division before guard in sea-level formula** — `factor <= 0` check now protects the exponentiation step as intended
+
+---
+
 ## [1.9.4] — 2026-06-16
 
 ### Fixed

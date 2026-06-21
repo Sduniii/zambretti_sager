@@ -1,0 +1,3 @@
+[tool.pylance]
+typeCheckingMode = "basic"
+reportMissingImports = "none"
