@@ -340,33 +340,6 @@ const CONDITION_THEME = {
 const DEFAULT_THEME = {bg:"linear-gradient(135deg,#1565C0 0%,#1976D2 100%)"};
 function getTheme(c){ return CONDITION_THEME[c] || DEFAULT_THEME; }
 
-// ── Sparkline SVG ─────────────────────────────────────────────────────────
-function sparklineSvg(points, width=240, height=44) {
-  if (!points || points.length < 2) return "";
-  const min = Math.min(...points), max = Math.max(...points);
-  const range = max - min || 1;
-  const stepX = width / (points.length - 1);
-  const toY = v => (height - 8 - (v - min) / range * (height - 16) - 0).toFixed(1);
-  const pts = points.map((v, i) => `${(i * stepX).toFixed(1)},${toY(v)}`).join(" ");
-  const rising = points[points.length - 1] >= points[0];
-  const color  = rising ? "#4CAF50" : "#EF5350";
-  const minV = min.toFixed(1), maxV = max.toFixed(1);
-  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
-    <defs>
-      <linearGradient id="spk-fill" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
-        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
-    <polygon fill="url(#spk-fill)"
-      points="${pts} ${width},${height} 0,${height}"/>
-    <polyline fill="none" stroke="${color}" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round" points="${pts}"/>
-    <text x="2" y="${height - 3}" fill="${color}" font-size="9" font-weight="700">${minV}</text>
-    <text x="${width - 2}" y="${height - 3}" fill="${color}" font-size="9" font-weight="700" text-anchor="end">${maxV}</text>
-  </svg>`;
-}
-
 // ── Short label helper ────────────────────────────────────────────────────
 function shortLabel(key, labels) {
   const full = labels[key] || key || "—";
@@ -557,8 +530,6 @@ class ZambrettiWeatherCard extends HTMLElement {
     const showForecasts = cfg.show_forecasts !== false;
     const showSager     = cfg.show_sager     !== false;
 
-    const pHistory = this._attr(cfg.entity_zambretti, "pressure_history", null);
-
     const fCells = [
       {label:"6h",  key:s6h},
       {label:"12h", key:s12h},
@@ -592,10 +563,6 @@ class ZambrettiWeatherCard extends HTMLElement {
           ${showForecasts ? `
           <div class="cell forecast-row">${fCells}</div>` : ""}
         </div>
-        ${(pHistory && pHistory.length > 1) ? `
-        <div class="sparkline-row">
-          <div class="sparkline-box">${sparklineSvg(pHistory, 240, 44)}</div>
-        </div>` : ""}
         <div class="footer">
           ${windStr ? `<span class="footer-wind">💨 ${windStr}</span>` : ""}
           ${showSager ? `
@@ -608,7 +575,6 @@ class ZambrettiWeatherCard extends HTMLElement {
     this._lastIconKey    = iconKey;
     this._lastThemeBg    = theme.bg;
     this._lastPrecip     = precip;
-    this._lastPHistory   = JSON.stringify(pHistory);
     this._rendered       = true;
   }
 
@@ -682,28 +648,6 @@ class ZambrettiWeatherCard extends HTMLElement {
       this._lastPrecip = precip;
     }
 
-    // Patch sparkline only if data changed
-    const pHistory = this._attr(cfg.entity_zambretti, "pressure_history", null);
-    const pHistoryStr = JSON.stringify(pHistory);
-    if (pHistoryStr !== this._lastPHistory) {
-      const spkRow = sr.querySelector(".sparkline-row");
-      if (pHistory && pHistory.length > 1) {
-        if (spkRow) {
-          const box = spkRow.querySelector(".sparkline-box");
-          if (box) box.innerHTML = sparklineSvg(pHistory, 240, 44);
-        } else {
-          // Row didn't exist before — insert before footer
-          const footer = sr.querySelector(".footer");
-          if (footer) {
-            const div = document.createElement("div");
-            div.className = "sparkline-row";
-            div.innerHTML = `<div class="sparkline-box">${sparklineSvg(pHistory, 240, 44)}</div>`;
-            footer.parentNode.insertBefore(div, footer);
-          }
-        }
-      }
-      this._lastPHistory = pHistoryStr;
-    }
   }
 
   _css(theme, compact, showPrecip = true) {
@@ -795,12 +739,6 @@ class ZambrettiWeatherCard extends HTMLElement {
         text-align:center; line-height:1.25; color:#fff;
         text-shadow:0 1px 3px rgba(0,0,0,0.3);
       }
-
-      .sparkline-row {
-        padding:${compact ? "4px 12px 2px" : "6px 16px 4px"};
-        background:rgba(0,0,0,0.08);
-      }
-      .sparkline-box { width:100%; height:44px; opacity:0.9; }
 
       .footer {
         display:flex; align-items:center; gap:10px; flex-wrap:wrap;

@@ -52,7 +52,6 @@ class ForecastData:
     humidity: float | None = None
     altitude: float | None = None
     is_night: bool = False
-    p_history: list[float] | None = None  # 24h sparkline data
 
 
 class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
@@ -169,8 +168,6 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         wind_speed = self._get_wind_speed()
         humidity = self._get_humidity()
         is_night = self._is_nighttime()
-        p_history = await self._fetch_pressure_sparkline()
-
         _LOGGER.debug(
             "Coordinator update: p_now=%.1f p_3h=%s p_6h=%s p_12h=%s wind=%s wind_speed=%s humidity=%s night=%s",
             p_now,
@@ -194,7 +191,6 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             humidity=humidity,
             altitude=self.altitude,
             is_night=is_night,
-            p_history=p_history,
         )
 
     def _get_temperature(self) -> float:
@@ -326,44 +322,6 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
                 hours,
             )
         return None
-
-    async def _fetch_pressure_sparkline(self) -> list[float] | None:
-        """Получить 24 точки давления (по одной в час) за последние 24 часа."""
-        now = dt_util.utcnow()
-        # Запрашиваем точку за каждый час — 24 параллельных запроса
-        # range(23, -1, -1) → 23h назад ... 0h (сейчас)
-        tasks = [
-            self._get_history_pressure(h, now)
-            for h in range(23, -1, -1)
-        ]
-        results = await asyncio.gather(*tasks)
-
-        # Текущее давление берём напрямую из сенсора
-        try:
-            p_current = parse_pressure_hpa(self.hass.states.get(self.pressure_id))
-            p_current = self._correct_pressure(p_current)
-        except Exception:
-            p_current = None
-
-        # Подставляем текущее давление в позицию «0 часов назад»
-        result_list = list(results)
-        if result_list and result_list[-1] is None and p_current is not None:
-            result_list[-1] = p_current
-
-        # Forward-fill: заполняем None ближайшим предыдущим известным значением
-        last_known: float | None = None
-        filled: list[float | None] = []
-        for val in result_list:
-            if val is not None:
-                last_known = val
-            filled.append(last_known)
-
-        # Убираем None в начале (нет истории старше N часов)
-        clean = [v for v in filled if v is not None]
-        if len(clean) < 2:
-            return None
-        return [round(v, 1) for v in clean]
-
 
 async def async_create_coordinator(
     hass: HomeAssistant, entry: ConfigEntry
