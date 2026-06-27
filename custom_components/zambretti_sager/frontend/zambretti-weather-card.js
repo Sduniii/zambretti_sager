@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.11
+ * Zambretti & Sager Weather Card  v1.9.12
  * Lovelace custom card for Home Assistant
  */
 
@@ -352,6 +352,7 @@ class ZambrettiWeatherCard extends HTMLElement {
 
   setConfig(config) {
     this._rendered = false;  // force full rebuild on next hass update
+    this._entitiesResolved = false; // re-resolve entities on config change
     this._config = {
       entity_zambretti: "sensor.zambretti_forecast",
       entity_sager:     "sensor.sager_forecast",
@@ -373,8 +374,47 @@ class ZambrettiWeatherCard extends HTMLElement {
     };
   }
 
+  // ── Auto-discover entity IDs by unique_id suffixes ───────────────────────
+  // HA builds entity_id as: sensor.<device_slug>_<sensor_name_slug>
+  // e.g. sensor.weather_station_zambretti_forecast
+  // We find them by matching unique_id suffixes stored in entity registry,
+  // or fall back to scanning hass.states for known name patterns.
+  _resolveEntities(h) {
+    const SUFFIX_MAP = {
+      entity_zambretti: ["_zambretti_forecast", "zambretti_forecast"],
+      entity_sager:     ["_sager_forecast",     "sager_forecast"],
+      entity_6h:        ["_zambretti_forecast_6h",  "zambretti_forecast_6h"],
+      entity_12h:       ["_zambretti_forecast_12h", "zambretti_forecast_12h"],
+      entity_24h:       ["_zambretti_forecast_24h", "zambretti_forecast_24h"],
+      entity_precip:    ["_precipitation_probability", "precipitation_probability"],
+    };
+    const states = h.states;
+    const resolved = {};
+    for (const [key, suffixes] of Object.entries(SUFFIX_MAP)) {
+      // Already configured and entity exists — keep it
+      const cur = this._config[key];
+      if (cur && states[cur]) { resolved[key] = cur; continue; }
+      // Search all sensor entities for a matching suffix
+      const found = Object.keys(states).find(id => {
+        if (!id.startsWith("sensor.")) return false;
+        const slug = id.slice(7); // strip "sensor."
+        return suffixes.some(s => slug === s || slug.endsWith(s));
+      });
+      if (found) resolved[key] = found;
+    }
+    return resolved;
+  }
+
   set hass(h) {
     this._hass = h;
+    // Auto-resolve entity IDs on first load (handles "weather_station_" prefix etc.)
+    if (!this._entitiesResolved) {
+      const resolved = this._resolveEntities(h);
+      if (Object.keys(resolved).length > 0) {
+        this._config = {...this._config, ...resolved};
+      }
+      this._entitiesResolved = true;
+    }
     // Full rebuild only on first render or after config change.
     // Subsequent hass updates use _patch() to avoid destroying SVG animations.
     if (!this._rendered) {
