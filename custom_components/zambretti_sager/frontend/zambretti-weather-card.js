@@ -1,5 +1,5 @@
 ﻿/**
- * Zambretti & Sager Weather Card  v1.9.12
+ * Zambretti & Sager Weather Card  v1.9.13
  * Lovelace custom card for Home Assistant
  * (i18n bundled inline)
  */
@@ -922,6 +922,19 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
     const colorInputVal= isSolidColor ? customBg.trim() : "#1565C0";
     const windUnit     = c.wind_unit || "m/s";
 
+    // entity values with defaults
+    const eZambretti = c.entity_zambretti || "sensor.zambretti_forecast";
+    const eSager     = c.entity_sager     || "sensor.sager_forecast";
+    const e6h        = c.entity_6h        || "sensor.zambretti_forecast_6h";
+    const e12h       = c.entity_12h       || "sensor.zambretti_forecast_12h";
+    const e24h       = c.entity_24h       || "sensor.zambretti_forecast_24h";
+    const ePrecip    = c.entity_precip    || "sensor.precipitation_probability";
+
+    // detect which entities actually exist to show warning
+    const missingEntities = [eZambretti, eSager, e6h, e12h, e24h, ePrecip].filter(
+      id => this._hass && !this._hass.states[id]
+    );
+
     this.shadowRoot.innerHTML = `
       <style>
         :host{display:block;padding:4px 0 8px}
@@ -955,7 +968,54 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
           border:1px solid var(--divider-color,rgba(255,255,255,0.15));
           background:var(--card-background-color,#1e1e1e);
           color:var(--primary-text-color,#fff);font-size:0.85rem;font-family:monospace}
+        .entity-input{width:100%;padding:8px 10px;border-radius:8px;box-sizing:border-box;
+          border:1px solid var(--divider-color,rgba(255,255,255,0.15));
+          background:var(--card-background-color,#1e1e1e);
+          color:var(--primary-text-color,#fff);font-size:0.85rem;font-family:monospace}
+        .entity-input.missing{border-color:#e53935}
+        .warn-box{background:rgba(229,57,53,0.12);border:1px solid #e53935;
+          border-radius:8px;padding:8px 12px;margin-bottom:10px;
+          font-size:0.78rem;color:#ef9a9a;line-height:1.4}
       </style>
+
+      ${missingEntities.length ? `
+      <div class="warn-box">
+        ⚠ Entity not found: ${missingEntities.map(e=>`<code>${e}</code>`).join(", ")}<br>
+        Update the entity IDs below to match your integration.
+      </div>` : ""}
+
+      <div class="section-title">Entities</div>
+
+      <div class="field-row">
+        <label>Zambretti Forecast</label>
+        <input class="entity-input ${this._hass && !this._hass.states[eZambretti] ? 'missing':''}"
+          id="inp-zambretti" type="text" value="${eZambretti}" spellcheck="false">
+      </div>
+      <div class="field-row">
+        <label>Sager Forecast</label>
+        <input class="entity-input ${this._hass && !this._hass.states[eSager] ? 'missing':''}"
+          id="inp-sager" type="text" value="${eSager}" spellcheck="false">
+      </div>
+      <div class="field-row">
+        <label>Zambretti 6h</label>
+        <input class="entity-input ${this._hass && !this._hass.states[e6h] ? 'missing':''}"
+          id="inp-6h" type="text" value="${e6h}" spellcheck="false">
+      </div>
+      <div class="field-row">
+        <label>Zambretti 12h</label>
+        <input class="entity-input ${this._hass && !this._hass.states[e12h] ? 'missing':''}"
+          id="inp-12h" type="text" value="${e12h}" spellcheck="false">
+      </div>
+      <div class="field-row">
+        <label>Zambretti 24h</label>
+        <input class="entity-input ${this._hass && !this._hass.states[e24h] ? 'missing':''}"
+          id="inp-24h" type="text" value="${e24h}" spellcheck="false">
+      </div>
+      <div class="field-row">
+        <label>Precipitation Probability</label>
+        <input class="entity-input ${this._hass && !this._hass.states[ePrecip] ? 'missing':''}"
+          id="inp-precip" type="text" value="${ePrecip}" spellcheck="false">
+      </div>
 
       <div class="section-title">${t.appearance}</div>
 
@@ -1007,6 +1067,23 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       ${this._toggle("sw-precip",    t.showPrecip,    t.showPrecipH,   c.show_precip    !== false)}
       ${this._toggle("sw-forecasts", t.showForecasts, t.showForecastH, c.show_forecasts !== false)}
     `;
+
+    // Event listeners — entity inputs
+    const entityFields = [
+      {id:"inp-zambretti", key:"entity_zambretti"},
+      {id:"inp-sager",     key:"entity_sager"},
+      {id:"inp-6h",        key:"entity_6h"},
+      {id:"inp-12h",       key:"entity_12h"},
+      {id:"inp-24h",       key:"entity_24h"},
+      {id:"inp-precip",    key:"entity_precip"},
+    ];
+    entityFields.forEach(({id, key}) => {
+      const el = this.shadowRoot.querySelector(`#${id}`);
+      if (!el) return;
+      el.addEventListener("change", e => {
+        this._fire({...this._config, [key]: e.target.value.trim()});
+      });
+    });
 
     // Event listeners
     this.shadowRoot.querySelector("#sel-lang").addEventListener("change", e => {
