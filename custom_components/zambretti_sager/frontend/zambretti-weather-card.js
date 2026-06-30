@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.12
+ * Zambretti & Sager Weather Card  v1.9.13
  * Lovelace custom card for Home Assistant
  */
 
@@ -283,13 +283,34 @@ function degToCompass(deg) {
 }
 
 // ── Format wind speed with correct unit ──────────────────────────────────
-function formatWind(speed, unit) {
+// sensorUnit: the native unit reported by the HA sensor (e.g. "km/h", "m/s", "mph")
+// displayUnit: the unit the user wants to see on the card
+function formatWind(speed, displayUnit, sensorUnit) {
   if (speed === null || speed === undefined) return null;
   const n = parseFloat(speed);
   if (isNaN(n)) return null;
-  if (unit === "mph")  return `${n.toFixed(1)} mph`;
-  if (unit === "km/h") return `${Math.round(n * 3.6)} km/h`;
-  return `${n.toFixed(1)} m/s`;   // default m/s
+
+  // Normalise sensor unit string (HA uses "km/h", card config uses "km/h")
+  const src = (sensorUnit || "m/s").toLowerCase().replace(" ", "");
+  const dst = (displayUnit || "m/s").toLowerCase().replace(" ", "");
+
+  // Convert the raw value to m/s first, then to the desired display unit
+  let ms;
+  if (src === "km/h" || src === "kmh") {
+    ms = n / 3.6;
+  } else if (src === "mph") {
+    ms = n / 2.23694;
+  } else {
+    ms = n; // already m/s
+  }
+
+  if (dst === "mph") {
+    return `${(ms * 2.23694).toFixed(1)} mph`;
+  }
+  if (dst === "km/h" || dst === "kmh") {
+    return `${Math.round(ms * 3.6)} km/h`;
+  }
+  return `${ms.toFixed(1)} m/s`; // default m/s
 }
 
 // ── Precipitation gauge SVG ───────────────────────────────────────────────
@@ -475,12 +496,15 @@ class ZambrettiWeatherCard extends HTMLElement {
     const showWind = cfg.show_wind !== false;
     let windStr = "";
     if (showWind) {
+      const windSpeedEntityId = cfg.entity_wind_speed || cfg.entity_zambretti;
       const windSpeedRaw = cfg.entity_wind_speed
         ? this._state(cfg.entity_wind_speed)
         : this._attr(cfg.entity_zambretti, "wind_speed", null);
+      // Read the sensor's native unit so we don't double-convert
+      const sensorWindUnit = this._attr(windSpeedEntityId, "unit_of_measurement", "m/s");
       const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
       const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null) || degToCompass(windDeg);
-      const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s");
+      const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s", sensorWindUnit);
       windStr = windFormatted
         ? (windDir ? `${windDir} ${windFormatted}` : windFormatted)
         : windDir || "";
@@ -591,12 +615,15 @@ class ZambrettiWeatherCard extends HTMLElement {
     const showWind = cfg.show_wind !== false;
     let windStr = "";
     if (showWind) {
+      const windSpeedEntityId = cfg.entity_wind_speed || cfg.entity_zambretti;
       const windSpeedRaw = cfg.entity_wind_speed
         ? this._state(cfg.entity_wind_speed)
         : this._attr(cfg.entity_zambretti, "wind_speed", null);
+      // Read the sensor's native unit so we don't double-convert
+      const sensorWindUnit = this._attr(windSpeedEntityId, "unit_of_measurement", "m/s");
       const windDeg = this._attr(cfg.entity_zambretti, "wind_degrees", null);
       const windDir = this._attr(cfg.entity_zambretti, "wind_direction", null) || degToCompass(windDeg);
-      const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s");
+      const windFormatted = formatWind(windSpeedRaw, cfg.wind_unit || "m/s", sensorWindUnit);
       windStr = windFormatted
         ? (windDir ? `${windDir} ${windFormatted}` : windFormatted)
         : windDir || "";

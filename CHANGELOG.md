@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.13] — 2026-06-30
+
+### Fixed
+- **Wind speed unit conversion** — the card no longer assumes the wind sensor always reports in m/s. `formatWind()` now reads the sensor's native `unit_of_measurement` attribute from Home Assistant and converts correctly from any source unit (m/s, km/h, mph) to the chosen display unit. Previously, selecting km/h as the display unit always multiplied the raw value by 3.6 even when the sensor (e.g. Ecowitt via HA integration) was already reporting in km/h, resulting in values ~3.6× too high.
+
+---
+
 ## [1.9.11] — 2026-06-21
 
 ### Added
