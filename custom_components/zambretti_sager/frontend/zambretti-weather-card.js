@@ -1,5 +1,5 @@
 /**
- * Zambretti & Sager Weather Card  v1.9.51
+ * Zambretti & Sager Weather Card  v1.9.68
  * Lovelace custom card for Home Assistant
  */
 
@@ -343,12 +343,287 @@ function precipWidget(pct) {
   </svg>`;
 }
 
+// ── Forecast trend timeline ───────────────────────────────────────────────
+/**
+ * Render a horizontal strip of Zambretti forecast states over time.
+ * Each step: small weather icon + time label. Steps separated by → arrows.
+ * The last (current) step is highlighted.
+ *
+ * @param {Array<{t:Date, state:string, isCurrent?:boolean}>} steps  max 8
+ * @param {object} labels  i18n map
+ * @param {boolean} compact
+ * @returns {string}  HTML string
+ */
+function forecastTimeline(steps, labels, compact) {
+  if (!steps || steps.length === 0) {
+    return `<div class="tl-empty">— no trend data yet —</div>`;
+  }
+
+  const iconSz = compact ? 28 : 34;
+
+  // Format time: HH:MM
+  function fmt(date) {
+    return `${String(date.getHours()).padStart(2,"0")}:${String(date.getMinutes()).padStart(2,"0")}`;
+  }
+
+  const cells = steps.map((step, i) => {
+    const isLast = i === steps.length - 1;
+    const iconKey = ZAMBRETTI_TO_ICON[step.state] || "partlycloudy";
+    const svg = WEATHER_ICONS[iconKey] || WEATHER_ICONS.partlycloudy;
+    // Short label: first word only (keeps it compact)
+    const fullLabel = labels[step.state] || step.state || "—";
+    const shortLbl  = fullLabel.split(/[,\s]+/)[0];
+    const timeStr   = fmt(step.t);
+    const curClass  = (step.isCurrent || isLast) ? " tl-current" : "";
+
+    const arrow = (!isLast)
+      ? `<div class="tl-arrow">›</div>`
+      : "";
+
+    return `
+      <div class="tl-step${curClass}">
+        <div class="tl-icon" style="width:${iconSz}px;height:${iconSz}px">${svg}</div>
+        <div class="tl-lbl">${shortLbl}</div>
+        <div class="tl-time">${timeStr}</div>
+      </div>
+      ${arrow}`;
+  }).join("");
+
+  return `<div class="tl-inner">${cells}</div>`;
+}
+
+// ── History chart SVG ────────────────────────────────────────────────────
+/**
+ * Render a dual-axis SVG line chart:
+ *   - blue line  = pressure (hPa), left axis
+ *   - teal line  = precipitation probability (%), right axis
+ *   - grey bars  = Zambretti condition label (bottom strip)
+ *
+ * @param {Array<{t:Date, p:number|null, precip:number|null, label:string|null}>} points
+ *   Sorted oldest→newest, max 288 points (24h × 5-min intervals).
+ * @param {object} labels  i18n label map for Zambretti keys
+ * @param {boolean} compact  use compact sizing
+ * @returns {string}  SVG markup string
+ */
+function historyChart(points, labels, compact) {
+  if (!points || points.length < 2) {
+    return `<div class="hchart-empty">— no history data yet —</div>`;
+  }
+
+  const W = 560, H = compact ? 150 : 200;
+  const PAD = { top: 22, right: 16, bottom: 38, left: 56 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+  const FONT = compact ? 11 : 13;
+  const FONT_FAMILY = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+
+  // ── Filter out nulls ───────────────────────────────────────────────────
+  let pPoints  = points.filter(d => d.p    != null);
+  let prPoints = points.filter(d => d.precip != null);
+
+  // ── Spike filter (IQR) for pressure only ─────────────────────────────
+  if (pPoints.length >= 4) {
+    const sv = [...pPoints].map(d => d.p).sort((a, b) => a - b);
+    const q1 = sv[Math.floor(sv.length * 0.25)];
+    const q3 = sv[Math.floor(sv.length * 0.75)];
+    const iqr = q3 - q1;
+    pPoints = pPoints.filter(d => d.p >= q1 - 3*iqr && d.p <= q3 + 3*iqr);
+  }
+  // Note: no IQR filter for precip — 0–100% are all valid values
+
+  // ── Pressure axis ─────────────────────────────────────────────────────
+  let pMin = 980, pMax = 1040;
+  if (pPoints.length) {
+    const vals = pPoints.map(d => d.p);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const margin = Math.max(2, (hi - lo) * 0.15);
+    pMin = Math.floor(lo - margin);
+    pMax = Math.ceil(hi + margin);
+  }
+
+  // ── Time axis ─────────────────────────────────────────────────────────
+  const tMin = points[0].t.getTime();
+  const tMax = points[points.length - 1].t.getTime();
+  const tRange = tMax - tMin || 1;
+
+  function xOf(t)  { return PAD.left + ((t.getTime() - tMin) / tRange) * cW; }
+  function yOfP(v) { return PAD.top  + (1 - (v - pMin) / (pMax - pMin)) * cH; }
+  function yOfPr(v){ return PAD.top  + (1 - v / 100) * cH; }
+
+  // ── Polyline paths ────────────────────────────────────────────────────
+  function makePath(pts, yFn) {
+    if (!pts.length) return "";
+    return pts.map((d, i) => `${i === 0 ? "M" : "L"}${xOf(d.t).toFixed(1)},${yFn(i === 0 ? pts[0][yFn === yOfP ? "p" : "precip"] : d[yFn === yOfP ? "p" : "precip"]).toFixed(1)}`).join(" ");
+  }
+  // build paths properly
+  const pPath  = pPoints.map((d, i)  => `${i===0?"M":"L"}${xOf(d.t).toFixed(1)},${yOfP(d.p).toFixed(1)}`).join(" ");
+  const prPath = prPoints.map((d, i) => `${i===0?"M":"L"}${xOf(d.t).toFixed(1)},${yOfPr(d.precip).toFixed(1)}`).join(" ");
+
+  // ── Area fill for pressure ─────────────────────────────────────────────
+  const pAreaPath = pPoints.length ? (
+    pPath +
+    ` L${xOf(pPoints[pPoints.length-1].t).toFixed(1)},${(PAD.top+cH).toFixed(1)}` +
+    ` L${xOf(pPoints[0].t).toFixed(1)},${(PAD.top+cH).toFixed(1)} Z`
+  ) : "";
+
+  // ── Y-axis ticks (pressure) ────────────────────────────────────────────
+  const pTickCount = compact ? 3 : 4;
+  const pStep = Math.ceil((pMax - pMin) / (pTickCount - 1) / 5) * 5;
+  const pTicks = [];
+  for (let v = Math.ceil(pMin / 5) * 5; v <= pMax; v += pStep) pTicks.push(v);
+
+  // ── Y-axis ticks (precip %) ────────────────────────────────────────────
+  const prTicks = [0, 25, 50, 75, 100];
+
+  // ── X-axis time labels (every 6h) ─────────────────────────────────────
+  const xLabels = [];
+  {
+    const start = new Date(tMin);
+    // round up to next whole hour
+    start.setMinutes(0, 0, 0);
+    start.setHours(start.getHours() + 1);
+    const cur = new Date(start);
+    while (cur.getTime() <= tMax) {
+      if (cur.getHours() % 6 === 0) {
+        xLabels.push({ t: new Date(cur), label: `${String(cur.getHours()).padStart(2,"0")}:00` });
+      }
+      cur.setHours(cur.getHours() + 1);
+    }
+  }
+
+  // ── Current time marker ───────────────────────────────────────────────
+  const nowX = xOf(new Date(tMax));
+
+  // ── Last pressure value annotation ───────────────────────────────────
+  let lastPAnnot = "";
+  if (pPoints.length) {
+    const last = pPoints[pPoints.length - 1];
+    const lx = xOf(last.t), ly = yOfP(last.p);
+    // Always place label to the LEFT of the dot to avoid right-edge overflow
+    lastPAnnot = `
+      <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="5" fill="#90CAF9" stroke="#fff" stroke-width="1.5"/>
+      <text x="${(lx - 8).toFixed(1)}" y="${(ly + 14).toFixed(1)}" text-anchor="middle"
+        fill="#90CAF9" font-size="${FONT + 2}" font-weight="800"
+        font-family="${FONT_FAMILY}">${last.p.toFixed(1)}</text>`;
+  }
+  let lastPrAnnot = "";
+  if (prPoints.length) {
+    const last = prPoints[prPoints.length - 1];
+    const lx = xOf(last.t), ly = yOfPr(last.precip);
+    // Place precip label above the dot
+    lastPrAnnot = `
+      <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="4.5" fill="rgba(255,255,255,0.90)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+      <text x="${(lx - 8).toFixed(1)}" y="${(ly - 10).toFixed(1)}" text-anchor="middle"
+        fill="rgba(255,255,255,0.85)" font-size="${FONT + 1}" font-weight="700"
+        font-family="${FONT_FAMILY}">${last.precip.toFixed(0)}%</text>`;
+  }
+
+  // ── Precip area fill (bottom-anchored) ────────────────────────────────
+  const prAreaPath = prPoints.length ? (
+    prPath +
+    ` L${xOf(prPoints[prPoints.length-1].t).toFixed(1)},${(PAD.top+cH).toFixed(1)}` +
+    ` L${xOf(prPoints[0].t).toFixed(1)},${(PAD.top+cH).toFixed(1)} Z`
+  ) : "";
+
+  const gid = "hg" + (++_gradientIdCounter);
+
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+    style="width:100%;height:100%;display:block;overflow:visible">
+    <defs>
+      <linearGradient id="${gid}_p" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#90CAF9" stop-opacity="0.40"/>
+        <stop offset="100%" stop-color="#90CAF9" stop-opacity="0.05"/>
+      </linearGradient>
+      <linearGradient id="${gid}_pr" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="rgba(255,255,255,0.22)" stop-opacity="1"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0.02)" stop-opacity="1"/>
+      </linearGradient>
+      <clipPath id="${gid}_clip">
+        <rect x="${PAD.left}" y="${PAD.top}" width="${cW}" height="${cH}"/>
+      </clipPath>
+    </defs>
+
+    <!-- Horizontal grid lines (pressure ticks) -->
+    ${pTicks.map(v => {
+      const y = yOfP(v).toFixed(1);
+      return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}"
+        stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4 5"/>`;
+    }).join("")}
+    <!-- Vertical grid lines (time ticks) -->
+    ${xLabels.map(({t}) => {
+      const x = xOf(t).toFixed(1);
+      return `<line x1="${x}" y1="${PAD.top}" x2="${x}" y2="${PAD.top+cH}"
+        stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="2 5"/>`;
+    }).join("")}
+
+    <g clip-path="url(#${gid}_clip)">
+      <!-- Precip area fill -->
+      ${prAreaPath ? `<path d="${prAreaPath}" fill="url(#${gid}_pr)"/>` : ""}
+      <!-- Precip line: dashed white, visible on any background -->
+      ${prPath ? `<path d="${prPath}" fill="none" stroke="rgba(255,255,255,0.72)"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        stroke-dasharray="5 4"/>` : ""}
+      <!-- Pressure area fill -->
+      ${pAreaPath ? `<path d="${pAreaPath}" fill="url(#${gid}_p)"/>` : ""}
+      <!-- Pressure line: solid, on top -->
+      ${pPath ? `<path d="${pPath}" fill="none" stroke="#90CAF9"
+        stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
+      ${lastPAnnot}
+      ${lastPrAnnot}
+    </g>
+
+    <!-- Left Y-axis labels (pressure) -->
+    ${pTicks.map(v => {
+      const y = yOfP(v);
+      if (y < PAD.top - 4 || y > PAD.top + cH + 4) return "";
+      return `<text x="${PAD.left - 7}" y="${y.toFixed(1)}" text-anchor="end"
+        dominant-baseline="middle" fill="rgba(255,255,255,0.70)"
+        font-size="${FONT}" font-family="${FONT_FAMILY}">${v}</text>`;
+    }).join("")}
+
+    <!-- Right Y-axis labels (precip %) — positioned inside right edge -->
+    ${prTicks.map(v => {
+      const y = yOfPr(v);
+      if (y < PAD.top - 4 || y > PAD.top + cH + 4) return "";
+      return `<text x="${(PAD.left + cW - 2).toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end"
+        dominant-baseline="middle" fill="rgba(255,255,255,0.45)"
+        font-size="${FONT - 2}" font-family="${FONT_FAMILY}">${v}%</text>`;
+    }).join("")}
+
+    <!-- X-axis time labels -->
+    ${xLabels.map(({t, label}) => {
+      const x = xOf(t);
+      if (x < PAD.left + 6 || x > PAD.left + cW - 6) return "";
+      return `<text x="${x.toFixed(1)}" y="${(PAD.top+cH+15).toFixed(1)}" text-anchor="middle"
+        fill="rgba(255,255,255,0.55)" font-size="${FONT}"
+        font-family="${FONT_FAMILY}">${label}</text>`;
+    }).join("")}
+
+    <!-- Axis borders -->
+    <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}"
+      stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+    <line x1="${PAD.left}" y1="${PAD.top+cH}" x2="${PAD.left+cW}" y2="${PAD.top+cH}"
+      stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+
+    <!-- Legend -->
+    <circle cx="${PAD.left+7}" cy="${PAD.top-7}" r="4" fill="#90CAF9"/>
+    <text x="${PAD.left+15}" y="${PAD.top-4}" fill="rgba(255,255,255,0.70)"
+      font-size="${FONT}" font-family="${FONT_FAMILY}" dominant-baseline="middle">hPa</text>
+    <circle cx="${PAD.left+52}" cy="${PAD.top-7}" r="4" fill="rgba(255,255,255,0.80)"/>
+    <text x="${PAD.left+60}" y="${PAD.top-4}" fill="rgba(255,255,255,0.60)"
+      font-size="${FONT}" font-family="${FONT_FAMILY}" dominant-baseline="middle">precip %</text>
+  </svg>`;
+}
+
 // ── Main card class ───────────────────────────────────────────────────────
 class ZambrettiWeatherCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({mode:"open"});
     this._config = {};
+    this._historyPoints = null;   // cached chart data
+    this._historyFetching = false;
+    this._historyTimer = null;
   }
 
   static getConfigElement() { return document.createElement("zambretti-weather-card-editor"); }
@@ -361,19 +636,27 @@ class ZambrettiWeatherCard extends HTMLElement {
       entity_12h:       "sensor.zambretti_forecast_12h",
       entity_24h:       "sensor.zambretti_forecast_24h",
       entity_precip:    "sensor.precipitation_probability",
-      entity_wind_speed: "",
-      show_wind:  true,
-      language:   "auto",
-      wind_unit:  "m/s",
-      compact:    false,
-      auto_theme: true,
-      custom_bg:  "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)",
+      entity_wind_speed:  "",
+      show_wind:    true,
+      show_trend:   false,
+      show_history: false,
+      language:     "auto",
+      wind_unit:    "m/s",
+      compact:      false,
+      auto_theme:   true,
+      custom_bg:    "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)",
     };
   }
 
   setConfig(config) {
-    this._rendered = false;  // force full rebuild on next hass update
-    this._entitiesResolved = false; // re-resolve entities on config change
+    this._rendered = false;
+    this._entitiesResolved = false;
+    // If history/trend toggle changed, reset cache
+    if (config.show_history !== this._config.show_history ||
+        config.show_trend   !== this._config.show_trend) {
+      this._historyPoints  = null;
+      this._timelineSteps  = null;
+    }
     this._config = {
       entity_zambretti: "sensor.zambretti_forecast",
       entity_sager:     "sensor.sager_forecast",
@@ -381,16 +664,18 @@ class ZambrettiWeatherCard extends HTMLElement {
       entity_12h:       "sensor.zambretti_forecast_12h",
       entity_24h:       "sensor.zambretti_forecast_24h",
       entity_precip:    "sensor.precipitation_probability",
-      entity_wind_speed: "",
-      show_wind:   true,
-      language:    "auto",
-      wind_unit:   "m/s",
-      compact:     false,
-      show_sager:  true,
-      show_precip: true,
+      entity_wind_speed:  "",
+      show_wind:      true,
+      show_trend:     false,
+      show_history:   false,
+      language:       "auto",
+      wind_unit:      "m/s",
+      compact:        false,
+      show_sager:     true,
+      show_precip:    true,
       show_forecasts: true,
-      auto_theme:  true,
-      custom_bg:   "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)",
+      auto_theme:     true,
+      custom_bg:      "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)",
       ...config,
     };
   }
@@ -436,6 +721,10 @@ class ZambrettiWeatherCard extends HTMLElement {
       }
       this._entitiesResolved = true;
     }
+    // Kick off history fetch (debounced) when show_history or show_trend is on
+    if (this._config.show_history || this._config.show_trend) {
+      this._scheduleHistoryFetch();
+    }
     // Full rebuild only on first render or after config change.
     // Subsequent hass updates use _patch() to avoid destroying SVG animations.
     if (!this._rendered) {
@@ -443,6 +732,280 @@ class ZambrettiWeatherCard extends HTMLElement {
     } else {
       this._patch();
     }
+  }
+
+  // ── History fetch ─────────────────────────────────────────────────────
+  _scheduleHistoryFetch() {
+    if (this._historyFetching) return;
+    // Throttle: refetch at most once per 5 minutes
+    const now = Date.now();
+    if (this._historyFetchedAt && (now - this._historyFetchedAt) < 5 * 60 * 1000) return;
+    this._historyFetching = true;
+    this._doFetchHistory().then(() => {
+      this._historyFetching = false;
+      this._historyFetchedAt = Date.now();
+      // Re-render chart and/or timeline section only
+      if (this._rendered) {
+        if (this._config.show_history) this._patchChart();
+        if (this._config.show_trend)   this._patchTimeline();
+      }
+    }).catch(() => {
+      this._historyFetching = false;
+    });
+  }
+
+  async _doFetchHistory() {
+    if (!this._hass) return;
+    const cfg = this._config;
+    const endTime   = new Date();
+
+    const zId      = cfg.entity_zambretti;
+    const precipId = cfg.entity_precip;
+    // Read pressure sensor entity_id from zambretti sensor attribute
+    // (set by the Python integration — the raw BMP280/barometric sensor)
+    const pressureId = this._attr(zId, "pressure_sensor", null) || null;
+
+    if (!zId && !precipId) return;
+
+    // Chart uses 24h window; timeline uses 48h to catch more state changes
+    const chartStart    = new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
+    const timelineStart = new Date(endTime.getTime() - 48 * 60 * 60 * 1000);
+
+    try {
+      // Two separate requests:
+      // 1. Zambretti: minimal_response=false to get attributes (pressure_hpa)
+      // 2. Precip:    minimal_response=true  (only state value needed)
+      const [zResult, prResult, pResult] = await Promise.all([
+        // Zambretti: 48h, full format for timeline states
+        zId ? this._hass.callWS({
+          type: "history/history_during_period",
+          start_time: timelineStart.toISOString(),
+          end_time:   endTime.toISOString(),
+          entity_ids: [zId],
+          minimal_response: false,
+          no_attributes: false,
+          significant_changes_only: false,
+        }) : Promise.resolve({}),
+        // Precip: 24h, minimal (only state value needed)
+        precipId ? this._hass.callWS({
+          type: "history/history_during_period",
+          start_time: chartStart.toISOString(),
+          end_time:   endTime.toISOString(),
+          entity_ids: [precipId],
+          minimal_response: true,
+          no_attributes: true,
+          significant_changes_only: false,
+        }) : Promise.resolve({}),
+        // Raw pressure sensor: 24h, minimal (dense real data from BMP280)
+        pressureId ? this._hass.callWS({
+          type: "history/history_during_period",
+          start_time: chartStart.toISOString(),
+          end_time:   endTime.toISOString(),
+          entity_ids: [pressureId],
+          minimal_response: true,
+          no_attributes: true,
+          significant_changes_only: false,
+        }) : Promise.resolve({}),
+      ]);
+
+      // ── Helpers ────────────────────────────────────────────────────────
+      function bucket(t) { return Math.round(t.getTime() / (5 * 60 * 1000)); }
+
+      // HA history_during_period returns entries in two possible shapes:
+      //   Full format  (minimal_response=false): { state, last_updated, attributes:{...} }
+      //   Minimal format (minimal_response=true): { s, lu, a:{...} }
+      // Some HA versions also mix: { state, lu, attributes }
+      function entryTime(entry) {
+        if (entry.lu != null)       return new Date(entry.lu * 1000);
+        if (entry.last_updated)     return new Date(entry.last_updated);
+        return new Date();
+      }
+      function entryState(entry) {
+        return entry.state ?? entry.s ?? null;
+      }
+      function entryAttrs(entry) {
+        // Full format: entry.attributes  |  Minimal: entry.a
+        return entry.attributes ?? entry.a ?? {};
+      }
+
+      // ── Build timeMap from zambretti history (last 24h only for chart) ─
+      const timeMap = new Map();
+      const zHistory = zResult[zId] || [];
+      const chartStartMs = chartStart.getTime();
+
+      if (pressureId) {
+        // ── Use raw pressure sensor (dense data, e.g. BMP280 every 5 min) ─
+        const pHistory = pResult[pressureId] || [];
+        for (const entry of pHistory) {
+          const t   = entryTime(entry);
+          if (t.getTime() < chartStartMs) continue;
+          const key = bucket(t);
+          const p   = parseFloat(entryState(entry));
+          if (!timeMap.has(key)) timeMap.set(key, { t, p: null, precip: null });
+          if (!isNaN(p)) timeMap.get(key).p = p;
+        }
+      } else {
+        // ── Fallback: pressure from zambretti sensor attributes ────────────
+        for (const entry of zHistory) {
+          const t    = entryTime(entry);
+          if (t.getTime() < chartStartMs) continue;
+          const key  = bucket(t);
+          const attrs = entryAttrs(entry);
+          const p    = parseFloat(attrs.pressure_hpa);
+          if (!timeMap.has(key)) timeMap.set(key, { t, p: null, precip: null });
+          if (!isNaN(p)) timeMap.get(key).p = p;
+        }
+      }
+
+      // ── Forward-fill pressure so line is continuous ────────────────────
+      let sortedKeys = [...timeMap.keys()].sort((a, b) => a - b);
+      let lastP = null;
+      for (const key of sortedKeys) {
+        const pt = timeMap.get(key);
+        if (pt.p != null) { lastP = pt.p; }
+        else if (lastP != null) { pt.p = lastP; }
+      }
+      // Backward-fill: fill leading nulls from the first known value
+      let firstP = null;
+      for (const key of sortedKeys) {
+        if (timeMap.get(key).p != null) { firstP = timeMap.get(key).p; break; }
+      }
+      if (firstP != null) {
+        for (const key of sortedKeys) {
+          const pt = timeMap.get(key);
+          if (pt.p != null) break;
+          pt.p = firstP;
+        }
+      }
+
+      // ── Precip: add its own time buckets + forward-fill across all buckets ─
+      const prHistory = prResult[precipId] || [];
+      const prRaw = prHistory
+        .map(e => ({ t: entryTime(e), v: parseFloat(entryState(e)) }))
+        .filter(x => !isNaN(x.v))
+        .sort((a, b) => a.t - b.t);
+
+      // Always inject the live current value as the last data point
+      // so the line always ends at the actual current reading
+      const livePrecip = parseFloat(this._hass?.states?.[precipId]?.state);
+      if (!isNaN(livePrecip)) {
+        const nowKey = bucket(endTime);
+        if (!timeMap.has(nowKey)) timeMap.set(nowKey, { t: endTime, p: null, precip: null });
+        timeMap.get(nowKey).precip = livePrecip;
+        // Re-add to prRaw so forward-fill uses it
+        prRaw.push({ t: endTime, v: livePrecip });
+        prRaw.sort((a, b) => a.t - b.t);
+      }
+
+      if (prRaw.length) {
+        // Add precip-only buckets into timeMap
+        for (const { t, v } of prRaw) {
+          if (t.getTime() < chartStartMs) continue;
+          const key = bucket(t);
+          if (!timeMap.has(key)) timeMap.set(key, { t, p: null, precip: null });
+          timeMap.get(key).precip = v;
+        }
+        // Re-sort after possible new keys
+        sortedKeys.length = 0;
+        sortedKeys.push(...[...timeMap.keys()].sort((a, b) => a - b));
+        // Re-run pressure fills on new sorted keys
+        lastP = null;
+        for (const key of sortedKeys) {
+          const pt = timeMap.get(key);
+          if (pt.p != null) { lastP = pt.p; }
+          else if (lastP != null) { pt.p = lastP; }
+        }
+        if (firstP != null) {
+          for (const key of sortedKeys) {
+            const pt = timeMap.get(key);
+            if (pt.p != null) break;
+            pt.p = firstP;
+          }
+        }
+        // Forward-fill precip across all buckets
+        let pi = 0;
+        let lastPrecip = prRaw[0].v;
+        for (const key of sortedKeys) {
+          const tMs = timeMap.get(key).t.getTime();
+          while (pi + 1 < prRaw.length && prRaw[pi + 1].t.getTime() <= tMs) pi++;
+          if (prRaw[pi].t.getTime() <= tMs) lastPrecip = prRaw[pi].v;
+          if (timeMap.get(key).precip == null) timeMap.get(key).precip = lastPrecip;
+        }
+      }
+
+      this._historyPoints = sortedKeys.map(k => timeMap.get(k));
+
+      // ── Timeline: all distinct state transitions + current ───────────────
+      const zValid = zHistory
+        .map(e => ({ t: entryTime(e), state: entryState(e) }))
+        .filter(e => e.state && e.state !== "unknown" && e.state !== "unavailable")
+        .sort((a, b) => a.t - b.t);
+
+      // Collect transitions — deduplicate consecutive same states
+      // AND enforce minimum 30-min gap between steps to avoid near-duplicate timestamps
+      const transitions = [];
+      for (const e of zValid) {
+        const prev = transitions[transitions.length - 1];
+        if (prev && prev.state === e.state) continue;
+        // Skip if less than 30 min since last step (startup noise)
+        if (prev && (e.t.getTime() - prev.t.getTime()) < 30 * 60 * 1000) {
+          // Update the existing step to the newer time & state
+          prev.state = e.state;
+          prev.t = e.t;
+          continue;
+        }
+        transitions.push({ t: e.t, state: e.state });
+      }
+
+      // Take last 7 transitions (leave room for current)
+      const pastSteps = transitions.slice(-7);
+
+      // Add current state pinned to now
+      const curState = this._hass.states[zId]?.state;
+      if (curState && curState !== "unknown" && curState !== "unavailable") {
+        const last = pastSteps[pastSteps.length - 1];
+        if (!last || last.state !== curState) {
+          pastSteps.push({ t: new Date(), state: curState, isCurrent: true });
+        } else {
+          last.isCurrent = true;
+          last.t = new Date();
+        }
+      }
+
+      this._timelineSteps = pastSteps;
+
+    } catch (e) {
+      // history fetch failed silently — chart/timeline will show empty state
+      this._historyPoints = [];
+      this._timelineSteps = [];
+    }
+  }
+
+  // ── Patch only the chart area without full rebuild ─────────────────────
+  _patchChart() {
+    const chartWrap = this.shadowRoot?.querySelector(".history-chart-wrap");
+    if (!chartWrap) {
+      // Chart section not in DOM yet — do full rebuild
+      this._rendered = false;
+      this._render();
+      return;
+    }
+    const compact = !!this._config.compact;
+    chartWrap.style.height = `${compact ? 150 : 200}px`;
+    const L = this._labels();
+    chartWrap.innerHTML = historyChart(this._historyPoints, L, compact);
+  }
+
+  // ── Patch only the timeline strip without full rebuild ──────────────────
+  _patchTimeline() {
+    const wrap = this.shadowRoot?.querySelector(".trend-timeline-wrap");
+    if (!wrap) {
+      this._rendered = false;
+      this._render();
+      return;
+    }
+    const L = this._labels();
+    wrap.innerHTML = forecastTimeline(this._timelineSteps, L, !!this._config.compact);
   }
 
   connectedCallback() {
@@ -523,6 +1086,8 @@ class ZambrettiWeatherCard extends HTMLElement {
     const showPrecip    = cfg.show_precip    !== false;
     const showForecasts = cfg.show_forecasts !== false;
     const showSager     = cfg.show_sager     !== false;
+    const showHistory   = !!cfg.show_history;
+    const showTrend     = !!cfg.show_trend;
 
     const fCells = [
       {label:"6h",  key:s6h},
@@ -563,6 +1128,16 @@ class ZambrettiWeatherCard extends HTMLElement {
           <span class="footer-badge">Sager</span>
           <span class="footer-text">${sLabel}</span>` : ""}
         </div>
+        ${showTrend ? `
+        <div class="trend-section">
+          <div class="trend-title"><svg viewBox="0 0 16 16" width="12" height="12" style="vertical-align:-1px;margin-right:4px;opacity:0.7"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="4" x2="8" y2="8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="8.5" x2="11" y2="10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Trend</div>
+          <div class="trend-timeline-wrap">${forecastTimeline(this._timelineSteps, L, compact)}</div>
+        </div>` : ""}
+        ${showHistory ? `
+        <div class="history-section">
+          <div class="history-title"><svg viewBox="0 0 16 16" width="12" height="12" style="vertical-align:-1px;margin-right:4px;opacity:0.7"><polyline points="1,12 5,6 8,9 11,4 15,7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>24h</div>
+          <div class="history-chart-wrap" style="height:${compact ? 150 : 200}px">${historyChart(this._historyPoints, L, compact)}</div>
+        </div>` : ""}
       </ha-card>`;
 
     // Save state for patch
@@ -648,6 +1223,20 @@ class ZambrettiWeatherCard extends HTMLElement {
       const pw = sr.querySelector(".precip-widget");
       if (pw) pw.innerHTML = precipWidget(precip);
       this._lastPrecip = precip;
+    }
+
+    // Patch timeline: if current zambretti state changed, append new step and re-render strip
+    if (cfg.show_trend && this._timelineSteps) {
+      const lastStep = this._timelineSteps[this._timelineSteps.length - 1];
+      if (zState && zState !== "unknown" && zState !== "unavailable" &&
+          lastStep && lastStep.state !== zState) {
+        // Clear isCurrent from previous last step
+        this._timelineSteps.forEach(s => { s.isCurrent = false; });
+        this._timelineSteps.push({ t: new Date(), state: zState, isCurrent: true });
+        // Keep max 8
+        if (this._timelineSteps.length > 8) this._timelineSteps.shift();
+        this._patchTimeline();
+      }
     }
 
   }
@@ -761,10 +1350,94 @@ class ZambrettiWeatherCard extends HTMLElement {
       .footer-text {
         font-size:${footFsz}rem; font-weight:500; opacity:0.80; line-height:1.3;
       }
+
+      /* ── Trend timeline section ── */
+      .trend-section {
+        padding:${compact ? "8px 10px 10px" : "10px 14px 12px"};
+        border-top:1px solid rgba(255,255,255,0.09);
+        background:rgba(0,0,0,0.12);
+      }
+      .trend-title {
+        font-size:${(0.68*s).toFixed(2)}rem; font-weight:700;
+        letter-spacing:0.10em; text-transform:uppercase;
+        color:rgba(255,255,255,0.55); margin-bottom:${compact?5:7}px;
+      }
+      .trend-timeline-wrap { width:100%; overflow-x:auto; }
+      .tl-inner {
+        display:flex; align-items:center; gap:0;
+        min-width:max-content; padding-bottom:2px;
+      }
+      .tl-step {
+        display:flex; flex-direction:column; align-items:center;
+        gap:3px; padding:${compact?"3px 6px":"4px 8px"};
+        border-radius:10px;
+        background:rgba(255,255,255,0.06);
+        border:1px solid rgba(255,255,255,0.08);
+        transition:background 0.3s;
+        min-width:${compact?52:62}px;
+      }
+      .tl-step.tl-current {
+        background:rgba(255,255,255,0.20);
+        border-color:rgba(255,255,255,0.35);
+        box-shadow:0 0 10px rgba(255,255,255,0.12);
+      }
+      .tl-icon { flex-shrink:0; }
+      .tl-icon svg { width:100%; height:100%; display:block; }
+      .tl-lbl {
+        font-size:${(0.68*s).toFixed(2)}rem; font-weight:600;
+        color:rgba(255,255,255,0.90); text-align:center;
+        line-height:1.2; max-width:${compact?52:62}px;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      }
+      .tl-current .tl-lbl { color:#fff; font-weight:700; }
+      .tl-time {
+        font-size:${(0.60*s).toFixed(2)}rem; font-weight:500;
+        color:rgba(255,255,255,0.50); letter-spacing:0.03em;
+      }
+      .tl-current .tl-time { color:rgba(255,255,255,0.80); }
+      .tl-arrow {
+        font-size:${compact?"1.1rem":"1.3rem"}; color:rgba(255,255,255,0.30);
+        padding:0 ${compact?3:4}px; flex-shrink:0; user-select:none;
+        align-self:center; margin-bottom:14px;
+      }
+      .tl-empty {
+        font-size:0.75rem; color:rgba(255,255,255,0.35);
+        font-style:italic; padding:8px 0;
+      }
+
+      /* ── History chart section ── */
+      .history-section {
+        padding:${compact ? "8px 0 0" : "10px 0 0"};
+        border-top:1px solid rgba(255,255,255,0.09);
+        background:rgba(0,0,0,0.15);
+        overflow:visible;
+      }
+      .history-title {
+        font-size:${(0.68*s).toFixed(2)}rem; font-weight:700;
+        letter-spacing:0.10em; text-transform:uppercase;
+        color:rgba(255,255,255,0.55);
+        margin-bottom:${compact?2:4}px;
+        padding:0 ${compact?"10px":"14px"};
+      }
+      .history-chart-wrap {
+        width:100%;
+        /* height is set inline per render to allow live updates */
+      }
+      .hchart-empty {
+        display:flex; align-items:center; justify-content:center;
+        height:${compact ? 100 : 130}px;
+        font-size:0.80rem; color:rgba(255,255,255,0.35);
+        font-style:italic;
+      }
     `;
   }
 
-  getCardSize() { return 3; }
+  getCardSize() {
+    let sz = 3;
+    if (this._config.show_trend)   sz += 1;
+    if (this._config.show_history) sz += 2;
+    return sz;
+  }
 }
 
 // ── Visual editor ─────────────────────────────────────────────────────────
@@ -891,6 +1564,8 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       ${this._toggle("sw-sager",     t.showSager,     t.showSagerH,    c.show_sager     !== false)}
       ${this._toggle("sw-precip",    t.showPrecip,    t.showPrecipH,   c.show_precip    !== false)}
       ${this._toggle("sw-forecasts", t.showForecasts, t.showForecastH, c.show_forecasts !== false)}
+      ${this._toggle("sw-trend",     t.showTrend    || "Show forecast trend timeline", t.showTrendH    || "Horizontal strip of past Zambretti states with icons and times", !!c.show_trend)}
+      ${this._toggle("sw-history",   t.showHistory  || "Show 24h history chart",      t.showHistoryH  || "Pressure & precipitation chart for the last 24 hours",            !!c.show_history)}
     `;
 
     // Event listeners
@@ -958,15 +1633,20 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
   }
 
   _syncPickers() {
-    const picker = this.shadowRoot?.querySelector("ha-entity-picker");
-    if (picker && this._hass) picker.hass = this._hass;
+    this.shadowRoot?.querySelectorAll("ha-entity-picker").forEach(p => {
+      if (this._hass) p.hass = this._hass;
+    });
   }
 
   _toggle(id, label, hint, checked) {
     const keyMap = {
-      "sw-wind": "show_wind",
-      "sw-sager":"show_sager", "sw-precip":"show_precip",
-      "sw-forecasts":"show_forecasts", "sw-auto-theme":"auto_theme",
+      "sw-wind":      "show_wind",
+      "sw-sager":     "show_sager",
+      "sw-precip":    "show_precip",
+      "sw-forecasts": "show_forecasts",
+      "sw-auto-theme":"auto_theme",
+      "sw-trend":     "show_trend",
+      "sw-history":   "show_history",
     };
     return `<div class="row">
       <div>

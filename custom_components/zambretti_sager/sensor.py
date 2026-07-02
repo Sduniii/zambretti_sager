@@ -45,6 +45,11 @@ def _trend_label(delta: float) -> str:
 class WeatherSensorBase(CoordinatorEntity, SensorEntity):
     """Базовый класс сенсоров прогноза."""
 
+    # Force HA to write a recorder entry every coordinator update cycle
+    # (every 5 min) even when state hasn't changed. This gives the Lovelace
+    # history chart and trend timeline dense data to work with.
+    _attr_force_update = True
+
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
         self._attr_device_info = DeviceInfo(
@@ -96,8 +101,6 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
         if d and d.is_night:
             attrs["is_night"] = d.is_night
         return attrs
-
-
 class ZambrettiSensor(WeatherSensorBase):
     """Текущий прогноз Замбретти на основе тренда за 3 часа."""
 
@@ -123,7 +126,11 @@ class ZambrettiSensor(WeatherSensorBase):
             return {}
         p_3h = d.p_3h if d.p_3h is not None else d.p_now
         delta = d.p_now - p_3h
-        return self._base_attrs(delta)
+        attrs = self._base_attrs(delta)
+        # Expose the raw pressure sensor entity_id so the Lovelace card
+        # can fetch its history directly (much denser than Zambretti state changes)
+        attrs["pressure_sensor"] = self.coordinator.pressure_id
+        return attrs
 
 
 class SagerSensor(WeatherSensorBase):

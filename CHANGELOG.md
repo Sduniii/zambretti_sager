@@ -1,5 +1,67 @@
 # Changelog
 
+## [1.9.63] — 2026-07-01
+
+### Fixed
+- **Precip spike on chart** — added IQR outlier filter for precipitation series (same as pressure). Stale high-value entries from earlier in the day no longer cause a spike to 100%.
+- **Precip line invisible on light/warm themes** — changed precip line and fill from teal `#80CBC4` to `rgba(255,255,255,0.70)` (white semi-transparent). Now readable on any background color (orange sunny, blue cloudy, dark night).
+- **Trend: near-duplicate timestamps** — added 30-minute minimum gap between timeline steps. Entries within 30 min of each other (startup noise after HA restart) are merged into one.
+
+### Changed
+- **Section header icons** — replaced unicode emoji (🕐 📈) with inline SVG icons. Renders consistently on all platforms (Windows, Android, iOS, Linux).
+
+---
+
+## [1.9.62] — 2026-07-01
+
+### Fixed
+- **Pressure spike on chart** — IQR filter removes outlier pressure readings (e.g. from sea-level correction being toggled).
+- **Trend showing times going backward** — reverted to transition-based timeline (honest: shows real state changes).
+
+---
+
+## [1.9.61] — 2026-07-01
+
+### Fixed
+- **Trend timeline showing only 1–2 steps** — root cause: HA Recorder only writes Zambretti sensor to history on state change. Added `_attr_force_update = True` to all sensor classes so HA writes every 5-minute coordinator cycle.
+
+### Changed
+- Timeline shows all distinct state transitions (deduplicated) instead of artificial 6h-boundary snapshots.
+
+---
+
+## [1.9.57] — 2026-07-01
+
+### Fixed
+- **Pressure chart line flat/missing** — pressure is now fetched directly from the raw barometric sensor (e.g. BMP280) whose entity_id is exposed via `pressure_sensor` attribute on the Zambretti sensor. Dense 5-min recorder data replaces the sparse attribute-based approach.
+
+### Added
+- `pressure_sensor` attribute added to `ZambrettiSensor.extra_state_attributes` — automatically set to `coordinator.pressure_id` (the sensor chosen at setup time). No user configuration required.
+
+---
+
+
+### Fixed
+- **History chart — pressure line missing** — the WS history request used `minimal_response: true` which strips all entity attributes. Since pressure lives in the `pressure_hpa` attribute of the Zambretti sensor, it was never being read. Changed to `minimal_response: false` so attributes are included.
+- **History chart — precipitation line flat** — `PrecipitationProbability` only writes to recorder on state change. If the value was stable all day, only one point was stored and displayed as a flat line. Added forward-fill across the full 24h time bucket array so the line tracks the last known value continuously.
+- **Removed unnecessary "Pressure sensor" picker** — pressure is already available in `sensor.zambretti_forecast` attributes; no extra entity is needed.
+
+---
+
+## [1.9.53] — 2026-07-01
+
+### Added
+- **Forecast trend timeline** (`show_trend`) — optional horizontal strip showing the last 8 distinct Zambretti forecast states with weather icons and timestamps. Placed between the footer and the history chart. Each step shows the icon, first word of the forecast label, and time. The current state is highlighted. Updates live when the forecast changes without a full card rebuild.
+
+---
+
+## [1.9.52] — 2026-07-01
+
+### Added
+- **24h history chart** (`show_history`) — optional SVG line chart embedded directly in the card. Shows pressure (hPa, blue line, left axis) and precipitation probability (%, teal line, right axis) over the last 24 hours. Data is fetched from HA Recorder via WebSocket and cached for 5 minutes. Renders cleanly in both normal and compact modes.
+
+---
+
 ## [1.9.51] — 2026-06-30
 
 ### Fixed
