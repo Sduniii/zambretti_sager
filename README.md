@@ -1,7 +1,7 @@
 # Zambretti & Sager Weather Forecaster
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-![Version](https://img.shields.io/badge/version-1.9.68-blue.svg)
+![Version](https://img.shields.io/badge/version-1.9.69-blue.svg)
 
 A Home Assistant custom integration that provides weather forecasting using the classic Zambretti and Sager algorithms based on barometric pressure trends.
 
@@ -27,6 +27,12 @@ After installation, click here to start setup:
 ---
 
 ## Features
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ziffmafiya/zambretti_sager/main/card-screenshot.png" alt="Zambretti Weather Card" width="400">
+</p>
+
+The integration includes a built-in **Lovelace card** that displays the current forecast with animated weather icons, night mode, wind info, pressure sparkline, and a 24-hour history chart. It is registered automatically — no manual resource setup needed.
 
 - **Zambretti Forecast** — 32 different weather predictions based on pressure trends over 3 hours
 - **Sager Forecast** — weather prediction based on current pressure and wind direction
