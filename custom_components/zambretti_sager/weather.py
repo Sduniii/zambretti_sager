@@ -204,10 +204,6 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
             "datetime": dt.isoformat(),
             "condition": condition,
             "native_pressure": round(predicted_p, 1),
-            "native_temperature": self.native_temperature,
-            "native_wind_speed": self.native_wind_speed,
-            "wind_bearing": self.wind_bearing,
-            "humidity": self.humidity,
             "precipitation_probability": prob,
             "native_precipitation": amount,
         }
