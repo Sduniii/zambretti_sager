@@ -1,0 +1,172 @@
+"""Weather platform for Zambretti & Sager."""
+from __future__ import annotations
+
+import datetime
+import logging
+
+from homeassistant.components.weather import (
+    ATTR_CONDITION_CLEAR_NIGHT,
+    ATTR_CONDITION_CLOUDY,
+    ATTR_CONDITION_PARTLYCLOUDY,
+    ATTR_CONDITION_POURING,
+    ATTR_CONDITION_RAINY,
+    ATTR_CONDITION_SUNNY,
+    Forecast,
+    WeatherEntity,
+    WeatherEntityFeature,
+)
+from homeassistant.const import UnitOfPressure, UnitOfSpeed, UnitOfTemperature
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
+
+from .const import DOMAIN, VERSION, ZAMBRETTI_MAPPING
+from .coordinator import ForecastData, ZambrettiSagerCoordinator
+from .sensor import ZambrettiSensor
+
+_LOGGER = logging.getLogger(__name__)
+
+def zambretti_to_condition(z_str: str, is_night: bool) -> str:
+    """Map Zambretti string to HA weather condition."""
+    if not z_str:
+        return ATTR_CONDITION_CLOUDY
+        
+    z_str = z_str.lower()
+    if "storm" in z_str:
+        return ATTR_CONDITION_POURING
+    if "rain" in z_str or "showery" in z_str:
+        return ATTR_CONDITION_RAINY
+        
+    if "fine" in z_str and "showers" not in z_str and "rain" not in z_str and "unsettled" not in z_str:
+        return ATTR_CONDITION_CLEAR_NIGHT if is_night else ATTR_CONDITION_SUNNY
+        
+    if "fine" in z_str or "fairly_fine" in z_str or "changeable" in z_str or "showery_early_improving" in z_str:
+        return ATTR_CONDITION_PARTLYCLOUDY
+        
+    return ATTR_CONDITION_CLOUDY
+
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up weather entity."""
+    coordinator: ZambrettiSagerCoordinator = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([ZambrettiWeatherEntity(coordinator)])
+
+class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
+    """Weather entity for Zambretti & Sager."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Zambretti Weather"
+    _attr_supported_features = WeatherEntityFeature.FORECAST_DAILY | WeatherEntityFeature.FORECAST_HOURLY
+    
+    _attr_native_pressure_unit = UnitOfPressure.HPA
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_wind_speed_unit = UnitOfSpeed.METERS_PER_SECOND
+
+    def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.entry.entry_id}_weather"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, coordinator.entry.entry_id)},
+            name="Weather Station",
+            manufacturer="Zambretti & Sager",
+            model="Software Forecaster",
+            sw_version=VERSION,
+        )
+
+    @property
+    def data(self) -> ForecastData | None:
+        return self.coordinator.data
+
+    @property
+    def condition(self) -> str | None:
+        d = self.data
+        if not d or not d.available or d.p_now is None:
+            return None
+            
+        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        delta = d.p_now - p_3h
+        z_index = ZambrettiSensor._zambretti_index(d.p_now, delta)
+        z_str = ZAMBRETTI_MAPPING.get(z_index, "stable")
+        
+        return zambretti_to_condition(z_str, d.is_night)
+
+    @property
+    def native_pressure(self) -> float | None:
+        d = self.data
+        if d and d.p_now is not None:
+            return round(d.p_now, 1)
+        return None
+
+    @property
+    def humidity(self) -> float | None:
+        d = self.data
+        if d and d.humidity is not None:
+            return round(d.humidity, 1)
+        return None
+
+    @property
+    def native_wind_speed(self) -> float | None:
+        d = self.data
+        if d and d.wind_speed is not None:
+            return round(d.wind_speed, 1)
+        return None
+        
+    @property
+    def wind_bearing(self) -> float | None:
+        d = self.data
+        if d and d.wind_degrees is not None:
+            return round(d.wind_degrees, 1)
+        return None
+
+    @property
+    def native_temperature(self) -> float | None:
+        return self.coordinator._get_temperature()
+
+    def _get_forecast(self, hours: int, p_ref: float | None, hours_ref: int) -> Forecast:
+        d = self.data
+        delta = (d.p_now - p_ref) / hours_ref * hours if hours_ref else 0
+        predicted_p = d.p_now + delta
+        z_index = ZambrettiSensor._zambretti_index(predicted_p, delta)
+        z_str = ZAMBRETTI_MAPPING.get(z_index, "stable")
+        condition = zambretti_to_condition(z_str, False)
+        
+        dt = dt_util.utcnow() + datetime.timedelta(hours=hours)
+        return {
+            "datetime": dt.isoformat(),
+            "condition": condition,
+            "native_pressure": round(predicted_p, 1),
+            "native_temperature": self.native_temperature,
+            "native_wind_speed": self.native_wind_speed,
+            "wind_bearing": self.wind_bearing,
+            "humidity": self.humidity,
+        }
+
+    async def async_forecast_daily(self) -> list[Forecast] | None:
+        """Return the daily forecast in native units."""
+        d = self.data
+        if not d or not d.available or d.p_now is None:
+            return None
+            
+        p_ref = d.p_12h if d.p_12h is not None else (
+                d.p_6h  if d.p_6h  is not None else (
+                d.p_3h  if d.p_3h  is not None else d.p_now))
+        hours_ref = (12 if d.p_12h is not None else
+                  6 if d.p_6h  is not None else
+                  3 if d.p_3h  is not None else 1)
+                  
+        return [self._get_forecast(24, p_ref, hours_ref)]
+
+    async def async_forecast_hourly(self) -> list[Forecast] | None:
+        """Return the hourly forecast in native units."""
+        d = self.data
+        if not d or not d.available or d.p_now is None:
+            return None
+            
+        p_ref_6 = d.p_3h if d.p_3h is not None else d.p_now
+        h_ref_6 = 3 if d.p_3h is not None else 1
+        f1 = self._get_forecast(6, p_ref_6, h_ref_6)
+        
+        p_ref_12 = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
+        h_ref_12 = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
+        f2 = self._get_forecast(12, p_ref_12, h_ref_12)
+        
+        return [f1, f2]
