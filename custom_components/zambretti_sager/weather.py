@@ -132,7 +132,7 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
         if not d or not d.available or d.p_now is None:
             return None
             
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta = d.p_now - p_3h
         
         if d.wind_degrees is not None:
@@ -177,15 +177,14 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
 
     def _get_forecast(self, target_hours: int) -> Forecast:
         d = self.data
-        if target_hours <= 6:
-            p_ref = d.p_3h if d.p_3h is not None else d.p_now
-            hours_ref = 3 if d.p_3h is not None else 1
-        elif target_hours <= 12:
-            p_ref = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
-            hours_ref = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
+        best_hour = target_hours if target_hours <= 24 else 24
+        
+        if d.p_history:
+            hours_ref = min(d.p_history.keys(), key=lambda h: abs(h - best_hour))
+            p_ref = d.p_history[hours_ref]
         else:
-            p_ref = d.p_12h if d.p_12h is not None else (d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now))
-            hours_ref = 12 if d.p_12h is not None else (6 if d.p_6h is not None else (3 if d.p_3h is not None else 1))
+            hours_ref = 1
+            p_ref = d.p_now
 
         delta = (d.p_now - p_ref) / hours_ref * target_hours if hours_ref else 0
         predicted_p = d.p_now + delta

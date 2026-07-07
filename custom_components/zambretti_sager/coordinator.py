@@ -36,7 +36,6 @@ from .pressure_util import (
 _LOGGER = logging.getLogger(__name__)
 
 UPDATE_INTERVAL = datetime.timedelta(minutes=5)
-HISTORY_HOURS = (3, 6, 12)
 
 
 @dataclass
@@ -45,9 +44,7 @@ class ForecastData:
 
     available: bool
     p_now: float | None = None
-    p_3h: float | None = None
-    p_6h: float | None = None
-    p_12h: float | None = None
+    p_history: dict[int, float] = field(default_factory=dict)
     wind_degrees: float | None = None
     wind_speed: float | None = None
     humidity: float | None = None
@@ -172,17 +169,21 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
 
         p_now = self._correct_pressure(p_now_raw)
         history_raw = await self._fetch_history_pressures()
+        p_history = {
+            h: self._correct_history_pressure(val, p_now)
+            for h, val in history_raw.items()
+            if val is not None
+        }
+
         wind = self._get_wind_direction()
         wind_speed = self._get_wind_speed()
         humidity = self._get_humidity()
         rain_amount = self._get_rain_amount()
         is_night = self._is_nighttime()
         _LOGGER.debug(
-            "Coordinator update: p_now=%.1f p_3h=%s p_6h=%s p_12h=%s wind=%s wind_speed=%s humidity=%s rain=%s night=%s",
+            "Coordinator update: p_now=%.1f history_hours=%s wind=%s wind_speed=%s humidity=%s rain=%s night=%s",
             p_now,
-            history_raw.get(3),
-            history_raw.get(6),
-            history_raw.get(12),
+            list(p_history.keys()),
             wind,
             wind_speed,
             humidity,
@@ -193,9 +194,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         return ForecastData(
             available=True,
             p_now=p_now,
-            p_3h=self._correct_history_pressure(history_raw.get(3), p_now),
-            p_6h=self._correct_history_pressure(history_raw.get(6), p_now),
-            p_12h=self._correct_history_pressure(history_raw.get(12), p_now),
+            p_history=p_history,
             wind_degrees=wind,
             wind_speed=wind_speed,
             humidity=humidity,
@@ -304,47 +303,45 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             return None
 
     async def _fetch_history_pressures(self) -> dict[int, float | None]:
-        """Concurrently fetch pressure 3, 6, and 12 hours ago."""
+        """Fetch all pressure history for the last 24 hours at once."""
         now = dt_util.utcnow()
-        results = await asyncio.gather(
-            *(self._get_history_pressure(hours, now) for hours in HISTORY_HOURS)
-        )
-        return dict(zip(HISTORY_HOURS, results))
-
-    async def _get_history_pressure(self, hours: int, now) -> float | None:
-        """Get pressure N hours ago via recorder."""
-        target_time = now - datetime.timedelta(hours=hours)
-        window = datetime.timedelta(minutes=15)
-        start_time = target_time - window
-        end_time = target_time + window
+        start_time = now - datetime.timedelta(hours=24, minutes=15)
+        
         try:
             events = await asyncio.wait_for(
                 get_instance(self.hass).async_add_executor_job(
                     history.get_significant_states,
                     self.hass,
                     start_time,
-                    end_time,
+                    now,
                     [self.pressure_id],
                 ),
                 timeout=30.0,
             )
+            
+            result: dict[int, float | None] = {h: None for h in range(1, 25)}
             if self.pressure_id in events and events[self.pressure_id]:
-                best = min(
-                    events[self.pressure_id],
-                    key=lambda s: abs(
-                        getattr(s, "last_changed", getattr(s, "last_updated", None)) - target_time
-                        if hasattr(s, "last_changed")
-                        else 0
-                    ),
-                )
-                return parse_pressure_hpa_from_history(best)
+                states = events[self.pressure_id]
+                for hour in range(1, 25):
+                    target_time = now - datetime.timedelta(hours=hour)
+                    # Find closest state within 30 minutes
+                    valid_states = [
+                        s for s in states 
+                        if abs((getattr(s, "last_changed", getattr(s, "last_updated", None)) or now) - target_time).total_seconds() <= 1800
+                    ]
+                    if valid_states:
+                        best = min(
+                            valid_states,
+                            key=lambda s: abs((getattr(s, "last_changed", getattr(s, "last_updated", None)) or now) - target_time).total_seconds()
+                        )
+                        val = parse_pressure_hpa_from_history(best)
+                        if val is not None:
+                            result[hour] = val
+                            
+            return result
         except Exception:
-            _LOGGER.exception(
-                "Error fetching pressure history for %s (%sh)",
-                self.pressure_id,
-                hours,
-            )
-        return None
+            _LOGGER.exception("Error fetching pressure history for %s", self.pressure_id)
+            return {h: None for h in range(1, 25)}
 
 async def async_create_coordinator(
     hass: HomeAssistant, entry: ConfigEntry

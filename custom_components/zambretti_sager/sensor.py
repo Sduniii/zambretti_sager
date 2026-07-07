@@ -87,7 +87,7 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
         attrs: dict = {}
         if d and d.p_now is not None:
             attrs["pressure_hpa"] = round(d.p_now, 1)
-            attrs["pressure_delta_3h"] = round(d.p_now - d.p_3h, 2) if d.p_3h else None
+            attrs["pressure_delta_3h"] = round(d.p_now - d.p_history.get(3, d.p_now), 2) if 3 in d.p_history else None
             attrs["trend"] = _trend_label(delta)
         if d and d.altitude is not None:
             attrs["altitude_m"] = round(d.altitude, 1)
@@ -114,8 +114,7 @@ class ZambrettiSensor(WeatherSensorBase):
         d = self.data
         if not d or not d.available or d.p_now is None:
             return None
-        # Use p_3h if available, otherwise assume steady trend (delta=0)
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta = d.p_now - p_3h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(d.p_now, delta), "stable")
 
@@ -124,7 +123,7 @@ class ZambrettiSensor(WeatherSensorBase):
         d = self.data
         if not d or d.p_now is None:
             return {}
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta = d.p_now - p_3h
         attrs = self._base_attrs(delta)
         # Expose the raw pressure sensor entity_id so the Lovelace card
@@ -146,7 +145,7 @@ class SagerSensor(WeatherSensorBase):
         d = self.data
         if not d or not d.available or d.p_now is None:
             return None
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta = d.p_now - p_3h
         return calculate_sager_forecast(d.p_now, delta, d.wind_degrees)
 
@@ -155,7 +154,7 @@ class SagerSensor(WeatherSensorBase):
         d = self.data
         if not d or d.p_now is None:
             return {}
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta = d.p_now - p_3h
         return self._base_attrs(delta)
 
@@ -174,7 +173,7 @@ class ZambrettiForecast6h(WeatherSensorBase):
         d = self.data
         if not d or not d.available or d.p_now is None:
             return None
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta_6h = (d.p_now - p_3h) * 2
         predicted = d.p_now + delta_6h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_6h), "stable")
@@ -184,7 +183,7 @@ class ZambrettiForecast6h(WeatherSensorBase):
         d = self.data
         if not d or d.p_now is None:
             return {}
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta_6h = (d.p_now - p_3h) * 2
         attrs = self._base_attrs(delta_6h)
         attrs["predicted_pressure_hpa"] = round(d.p_now + delta_6h, 1)
@@ -205,9 +204,14 @@ class ZambrettiForecast12h(WeatherSensorBase):
         d = self.data
         if not d or not d.available or d.p_now is None:
             return None
-        # Use 6h history if available, else fall back to 3h, else steady
-        p_ref = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
-        hours = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
+        for h in (6, 3, 1):
+            if h in d.p_history:
+                p_ref = d.p_history[h]
+                hours = h
+                break
+        else:
+            p_ref = d.p_now
+            hours = 1
         delta_12h = (d.p_now - p_ref) / hours * 12
         predicted = d.p_now + delta_12h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_12h), "stable")
@@ -217,8 +221,14 @@ class ZambrettiForecast12h(WeatherSensorBase):
         d = self.data
         if not d or d.p_now is None:
             return {}
-        p_ref = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
-        hours = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
+        for h in (6, 3, 1):
+            if h in d.p_history:
+                p_ref = d.p_history[h]
+                hours = h
+                break
+        else:
+            p_ref = d.p_now
+            hours = 1
         delta_12h = (d.p_now - p_ref) / hours * 12
         attrs = self._base_attrs(delta_12h)
         attrs["predicted_pressure_hpa"] = round(d.p_now + delta_12h, 1)
@@ -239,13 +249,14 @@ class ZambrettiForecast24h(WeatherSensorBase):
         d = self.data
         if not d or not d.available or d.p_now is None:
             return None
-        # Use 12h history if available, else best available, else steady
-        p_ref = d.p_12h if d.p_12h is not None else (
-                d.p_6h  if d.p_6h  is not None else (
-                d.p_3h  if d.p_3h  is not None else d.p_now))
-        hours = (12 if d.p_12h is not None else
-                  6 if d.p_6h  is not None else
-                  3 if d.p_3h  is not None else 1)
+        for h in (12, 6, 3, 1):
+            if h in d.p_history:
+                p_ref = d.p_history[h]
+                hours = h
+                break
+        else:
+            p_ref = d.p_now
+            hours = 1
         delta_24h = (d.p_now - p_ref) / hours * 24
         predicted = d.p_now + delta_24h
         return ZAMBRETTI_MAPPING.get(self._zambretti_index(predicted, delta_24h), "stable")
@@ -255,12 +266,14 @@ class ZambrettiForecast24h(WeatherSensorBase):
         d = self.data
         if not d or d.p_now is None:
             return {}
-        p_ref = d.p_12h if d.p_12h is not None else (
-                d.p_6h  if d.p_6h  is not None else (
-                d.p_3h  if d.p_3h  is not None else d.p_now))
-        hours = (12 if d.p_12h is not None else
-                  6 if d.p_6h  is not None else
-                  3 if d.p_3h  is not None else 1)
+        for h in (12, 6, 3, 1):
+            if h in d.p_history:
+                p_ref = d.p_history[h]
+                hours = h
+                break
+        else:
+            p_ref = d.p_now
+            hours = 1
         delta_24h = (d.p_now - p_ref) / hours * 24
         attrs = self._base_attrs(delta_24h)
         attrs["predicted_pressure_hpa"] = round(d.p_now + delta_24h, 1)
@@ -284,7 +297,7 @@ class PrecipitationProbability(WeatherSensorBase):
         if not d or not d.available or d.p_now is None:
             return None
 
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta = d.p_now - p_3h
         p_now = d.p_now
 
@@ -317,7 +330,7 @@ class PrecipitationProbability(WeatherSensorBase):
         d = self.data
         if not d or d.p_now is None:
             return {}
-        p_3h = d.p_3h if d.p_3h is not None else d.p_now
+        p_3h = d.p_history.get(3, d.p_now)
         delta = d.p_now - p_3h
         attrs = self._base_attrs(delta)
         return attrs
