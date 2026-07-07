@@ -20,6 +20,7 @@ from .const import (
     CONF_PRESSURE_SENSOR,
     CONF_TEMPERATURE_SENSOR,
     CONF_HUMIDITY_SENSOR,
+    CONF_RAIN_SENSOR,
     CONF_USE_SEA_LEVEL,
     CONF_WIND_SENSOR,
     CONF_WIND_SPEED_SENSOR,
@@ -50,6 +51,7 @@ class ForecastData:
     wind_degrees: float | None = None
     wind_speed: float | None = None
     humidity: float | None = None
+    rain_amount: float | None = None
     altitude: float | None = None
     is_night: bool = False
 
@@ -81,6 +83,9 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         self.humidity_id = entry.options.get(
             CONF_HUMIDITY_SENSOR, entry.data.get(CONF_HUMIDITY_SENSOR)
         )
+        self.rain_id = entry.options.get(
+            CONF_RAIN_SENSOR, entry.data.get(CONF_RAIN_SENSOR)
+        )
         self.use_sea_level = entry.options.get(
             CONF_USE_SEA_LEVEL, entry.data.get(CONF_USE_SEA_LEVEL, False)
         )
@@ -105,6 +110,9 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         )
         self.humidity_id = entry.options.get(
             CONF_HUMIDITY_SENSOR, entry.data.get(CONF_HUMIDITY_SENSOR)
+        )
+        self.rain_id = entry.options.get(
+            CONF_RAIN_SENSOR, entry.data.get(CONF_RAIN_SENSOR)
         )
         self.use_sea_level = entry.options.get(
             CONF_USE_SEA_LEVEL, entry.data.get(CONF_USE_SEA_LEVEL, False)
@@ -167,9 +175,10 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         wind = self._get_wind_direction()
         wind_speed = self._get_wind_speed()
         humidity = self._get_humidity()
+        rain_amount = self._get_rain_amount()
         is_night = self._is_nighttime()
         _LOGGER.debug(
-            "Coordinator update: p_now=%.1f p_3h=%s p_6h=%s p_12h=%s wind=%s wind_speed=%s humidity=%s night=%s",
+            "Coordinator update: p_now=%.1f p_3h=%s p_6h=%s p_12h=%s wind=%s wind_speed=%s humidity=%s rain=%s night=%s",
             p_now,
             history_raw.get(3),
             history_raw.get(6),
@@ -177,6 +186,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             wind,
             wind_speed,
             humidity,
+            rain_amount,
             is_night,
         )
 
@@ -189,6 +199,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             wind_degrees=wind,
             wind_speed=wind_speed,
             humidity=humidity,
+            rain_amount=rain_amount,
             altitude=self.altitude,
             is_night=is_night,
         )
@@ -273,6 +284,18 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         if not self.humidity_id:
             return None
         state = self.hass.states.get(self.humidity_id)
+        if not state or state.state in ("unknown", "unavailable"):
+            return None
+        try:
+            return float(state.state)
+        except ValueError:
+            return None
+
+    def _get_rain_amount(self) -> float | None:
+        """Вернуть количество осадков или None."""
+        if not self.rain_id:
+            return None
+        state = self.hass.states.get(self.rain_id)
         if not state or state.state in ("unknown", "unavailable"):
             return None
         try:

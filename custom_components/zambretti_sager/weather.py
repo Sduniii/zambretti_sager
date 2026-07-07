@@ -88,8 +88,8 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
     def data(self) -> ForecastData | None:
         return self.coordinator.data
 
-    def _calculate_precipitation(self, p_now: float, delta: float, humidity: float | None) -> tuple[int, float]:
-        """Estimate precipitation probability (%) and amount (mm)."""
+    def _calculate_precipitation(self, p_now: float, delta: float, humidity: float | None, rain_amount: float | None) -> tuple[int, float]:
+        """Estimate precipitation probability (%) and return actual rain amount if available, else estimate."""
         if p_now < 1000:       base_prob = 90
         elif p_now < 1005:     base_prob = 70
         elif p_now < 1010:     base_prob = 50
@@ -113,11 +113,16 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
 
         prob = max(0, min(100, base_prob + trend_modifier + humidity_modifier))
         
-        amount = 0.0
-        if prob >= 90: amount = 5.0
-        elif prob >= 70: amount = 2.5
-        elif prob >= 50: amount = 1.0
-        elif prob >= 30: amount = 0.2
+        # Override probability if it's currently raining
+        if rain_amount is not None and rain_amount > 0:
+            prob = max(prob, 90)
+            amount = rain_amount
+        else:
+            amount = 0.0
+            if prob >= 90: amount = 5.0
+            elif prob >= 70: amount = 2.5
+            elif prob >= 50: amount = 1.0
+            elif prob >= 30: amount = 0.2
             
         return prob, amount
 
@@ -193,7 +198,7 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
             
         condition = zambretti_to_condition(z_str, False)
         
-        prob, amount = self._calculate_precipitation(predicted_p, delta, d.humidity)
+        prob, amount = self._calculate_precipitation(predicted_p, delta, d.humidity, d.rain_amount)
         
         dt = dt_util.utcnow() + datetime.timedelta(hours=target_hours)
         return {
