@@ -121,15 +121,25 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
     def native_temperature(self) -> float | None:
         return self.coordinator._get_temperature()
 
-    def _get_forecast(self, hours: int, p_ref: float | None, hours_ref: int) -> Forecast:
+    def _get_forecast(self, target_hours: int) -> Forecast:
         d = self.data
-        delta = (d.p_now - p_ref) / hours_ref * hours if hours_ref else 0
+        if target_hours <= 6:
+            p_ref = d.p_3h if d.p_3h is not None else d.p_now
+            hours_ref = 3 if d.p_3h is not None else 1
+        elif target_hours <= 12:
+            p_ref = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
+            hours_ref = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
+        else:
+            p_ref = d.p_12h if d.p_12h is not None else (d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now))
+            hours_ref = 12 if d.p_12h is not None else (6 if d.p_6h is not None else (3 if d.p_3h is not None else 1))
+
+        delta = (d.p_now - p_ref) / hours_ref * target_hours if hours_ref else 0
         predicted_p = d.p_now + delta
         z_index = ZambrettiSensor._zambretti_index(predicted_p, delta)
         z_str = ZAMBRETTI_MAPPING.get(z_index, "stable")
         condition = zambretti_to_condition(z_str, False)
         
-        dt = dt_util.utcnow() + datetime.timedelta(hours=hours)
+        dt = dt_util.utcnow() + datetime.timedelta(hours=target_hours)
         return {
             "datetime": dt.isoformat(),
             "condition": condition,
@@ -141,32 +151,13 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
         }
 
     async def async_forecast_daily(self) -> list[Forecast] | None:
-        """Return the daily forecast in native units."""
-        d = self.data
-        if not d or not d.available or d.p_now is None:
+        """Return the daily forecast extrapolated up to 5 days."""
+        if not self.data or not self.data.available or self.data.p_now is None:
             return None
-            
-        p_ref = d.p_12h if d.p_12h is not None else (
-                d.p_6h  if d.p_6h  is not None else (
-                d.p_3h  if d.p_3h  is not None else d.p_now))
-        hours_ref = (12 if d.p_12h is not None else
-                  6 if d.p_6h  is not None else
-                  3 if d.p_3h  is not None else 1)
-                  
-        return [self._get_forecast(24, p_ref, hours_ref)]
+        return [self._get_forecast(days * 24) for days in range(1, 6)]
 
     async def async_forecast_hourly(self) -> list[Forecast] | None:
-        """Return the hourly forecast in native units."""
-        d = self.data
-        if not d or not d.available or d.p_now is None:
+        """Return the hourly forecast for the next 24 hours."""
+        if not self.data or not self.data.available or self.data.p_now is None:
             return None
-            
-        p_ref_6 = d.p_3h if d.p_3h is not None else d.p_now
-        h_ref_6 = 3 if d.p_3h is not None else 1
-        f1 = self._get_forecast(6, p_ref_6, h_ref_6)
-        
-        p_ref_12 = d.p_6h if d.p_6h is not None else (d.p_3h if d.p_3h is not None else d.p_now)
-        h_ref_12 = 6 if d.p_6h is not None else (3 if d.p_3h is not None else 1)
-        f2 = self._get_forecast(12, p_ref_12, h_ref_12)
-        
-        return [f1, f2]
+        return [self._get_forecast(h) for h in range(1, 25)]
