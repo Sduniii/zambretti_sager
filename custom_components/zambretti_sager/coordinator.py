@@ -1,4 +1,4 @@
-"""Координатор данных для интеграции Zambretti & Sager."""
+"""Data coordinator for Zambretti & Sager integration."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ HISTORY_HOURS = (3, 6, 12)
 
 @dataclass
 class ForecastData:
-    """Снимок данных для расчёта прогнозов."""
+    """Data snapshot for calculating forecasts."""
 
     available: bool
     p_now: float | None = None
@@ -57,7 +57,7 @@ class ForecastData:
 
 
 class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
-    """Собирает давление и историю один раз на цикл обновления."""
+    """Collects pressure and history once per update cycle."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, altitude: float | None) -> None:
         super().__init__(
@@ -93,7 +93,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         self.longitude = entry.options.get(CONF_LONGITUDE, entry.data.get(CONF_LONGITUDE))
 
     def _update_sensor_ids(self) -> None:
-        """Обновить идентификаторы сенсоров из конфигурации при reload."""
+        """Update sensor IDs from configuration during reload."""
         entry = self.entry
         new_pressure_id = entry.options.get(
             CONF_PRESSURE_SENSOR, entry.data[CONF_PRESSURE_SENSOR]
@@ -119,7 +119,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         )
 
     def _start_pressure_watcher(self) -> None:
-        """Подписаться на изменения датчика давления."""
+        """Subscribe to pressure sensor changes."""
         if self._unsub_state_listener:
             return
 
@@ -144,14 +144,14 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             self._unsub_state_listener = None
 
     def _is_nighttime(self) -> bool:
-        """Определить, сейчас ночь (через sun.sun)."""
+        """Determine if it is nighttime (via sun.sun)."""
         sun_state = self.hass.states.get("sun.sun")
         if sun_state and sun_state.attributes.get("elevation", 90) < 0:
             return True
         return False
 
     async def _async_update_data(self) -> ForecastData:
-        """Прочитать текущее давление, историю и ветер."""
+        """Read current pressure, history, and wind."""
         pressure_state = self.hass.states.get(self.pressure_id)
         if not pressure_state or pressure_state.state in ("unknown", "unavailable"):
             _LOGGER.debug(
@@ -205,7 +205,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         )
 
     def _get_temperature(self) -> float:
-        """Вернуть текущую температуру или стандартные 15 °C."""
+        """Return current temperature or standard 15 °C."""
         if not self.temp_id:
             return 15.0
         state = self.hass.states.get(self.temp_id)
@@ -217,7 +217,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             return 15.0
 
     def _is_likely_sea_level_sensor(self) -> bool:
-        """Определить, отдаёт ли датчик уже давление на уровне моря."""
+        """Determine if the sensor already reports sea level pressure."""
         from .const import SEA_LEVEL_SENSOR_HINTS
 
         state = self.hass.states.get(self.pressure_id)
@@ -233,7 +233,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         return False
 
     def _correct_pressure(self, raw_pressure: float) -> float:
-        """Применить коррекцию на уровень моря."""
+        """Apply sea level correction."""
         if not self.use_sea_level or self.altitude is None:
             return raw_pressure
         if self._is_likely_sea_level_sensor():
@@ -250,13 +250,13 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         )
 
     def _correct_history_pressure(self, raw_pressure: float | None, fallback: float) -> float:
-        """Скорректировать историческое давление или вернуть fallback."""
+        """Correct historical pressure or return fallback."""
         if raw_pressure is None:
             return fallback
         return self._correct_pressure(raw_pressure)
 
     def _get_wind_direction(self) -> float | None:
-        """Вернуть направление ветра в градусах или None."""
+        """Return wind direction in degrees or None."""
         if not self.wind_id:
             return None
         state = self.hass.states.get(self.wind_id)
@@ -268,7 +268,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             return None
 
     def _get_wind_speed(self) -> float | None:
-        """Вернуть скорость ветра или None."""
+        """Return wind speed or None."""
         if not self.wind_speed_id:
             return None
         state = self.hass.states.get(self.wind_speed_id)
@@ -280,7 +280,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             return None
 
     def _get_humidity(self) -> float | None:
-        """Вернуть относительную влажность в % или None."""
+        """Return relative humidity in % or None."""
         if not self.humidity_id:
             return None
         state = self.hass.states.get(self.humidity_id)
@@ -292,7 +292,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             return None
 
     def _get_rain_amount(self) -> float | None:
-        """Вернуть количество осадков или None."""
+        """Return precipitation amount or None."""
         if not self.rain_id:
             return None
         state = self.hass.states.get(self.rain_id)
@@ -304,7 +304,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
             return None
 
     async def _fetch_history_pressures(self) -> dict[int, float | None]:
-        """Параллельно получить давление 3, 6 и 12 часов назад."""
+        """Concurrently fetch pressure 3, 6, and 12 hours ago."""
         now = dt_util.utcnow()
         results = await asyncio.gather(
             *(self._get_history_pressure(hours, now) for hours in HISTORY_HOURS)
@@ -312,7 +312,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
         return dict(zip(HISTORY_HOURS, results))
 
     async def _get_history_pressure(self, hours: int, now) -> float | None:
-        """Получить давление N часов назад через recorder."""
+        """Get pressure N hours ago via recorder."""
         target_time = now - datetime.timedelta(hours=hours)
         window = datetime.timedelta(minutes=15)
         start_time = target_time - window
@@ -349,7 +349,7 @@ class ZambrettiSagerCoordinator(DataUpdateCoordinator[ForecastData]):
 async def async_create_coordinator(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> ZambrettiSagerCoordinator:
-    """Создать координатор и определить высоту при необходимости."""
+    """Create coordinator and determine altitude if necessary."""
     latitude = entry.options.get(CONF_LATITUDE, entry.data.get(CONF_LATITUDE))
     longitude = entry.options.get(CONF_LONGITUDE, entry.data.get(CONF_LONGITUDE))
 

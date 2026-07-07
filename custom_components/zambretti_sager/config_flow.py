@@ -63,7 +63,7 @@ RAIN_SENSOR_SELECTOR = selector.EntitySelector(
 
 
 def _normalize_optional_entities(data: dict) -> dict:
-    """Очистить пустые значения необязательных датчиков."""
+    """Clear empty values of optional sensors."""
     normalized = dict(data)
     for key in OPTIONAL_ENTITY_KEYS:
         if not normalized.get(key):
@@ -72,7 +72,7 @@ def _normalize_optional_entities(data: dict) -> dict:
 
 
 def _apply_location(data: dict) -> dict:
-    """Извлечь координаты из location selector."""
+    """Extract coordinates from location selector."""
     normalized = dict(data)
     if CONF_LOCATION in normalized:
         location = normalized.pop(CONF_LOCATION)
@@ -88,8 +88,8 @@ class ZambrettiSagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             user_input = _normalize_optional_entities(_apply_location(user_input))
 
-            # Используем entity_id датчика давления как unique_id,
-            # чтобы предотвратить дублирование одного сенсора в двух экземплярах
+            # Use the pressure sensor entity_id as the unique_id
+            # to prevent duplicating the same sensor across multiple entries
             await self.async_set_unique_id(f"{DOMAIN}_{user_input[CONF_PRESSURE_SENSOR]}")
             self._abort_if_unique_id_configured()
 
@@ -158,8 +158,8 @@ class ZambrettiSagerOptionsFlowHandler(config_entries.OptionsFlow):
                 "longitude": self.hass.config.longitude,
             }
 
-        # Строим схему — optional поля с None-значением не передаём как default,
-        # чтобы voluptuous не упал на невалидном entity_id
+        # Build the schema — optional fields with None value are not passed as default
+        # so voluptuous doesn't fail on an invalid entity_id
         schema_dict = {
             vol.Required(CONF_PRESSURE_SENSOR, default=current_pressure): PRESSURE_SENSOR_SELECTOR,
         }

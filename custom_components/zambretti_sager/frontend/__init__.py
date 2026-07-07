@@ -27,24 +27,24 @@ except ImportError:
 
 
 def _get_lovelace(hass: HomeAssistant) -> Any | None:
-    """Получить объект LovelaceData из hass.data — поддерживает старый и новый ключ."""
+    """Get LovelaceData object from hass.data — supports old and new key."""
     data = hass.data.get(_LOVELACE_DATA_KEY)
     if data is None:
-        # Fallback: старый ключ "lovelace"
+        # Fallback: old "lovelace" key
         data = hass.data.get("lovelace")
     return data
 
 
 def _get_resource_mode(lovelace: Any) -> str:
-    """Получить режим ресурсов безопасно.
+    """Safely get the resources mode.
 
-    В HA 2026: LovelaceData.resource_mode
-    В старых HA: lovelace.mode или lovelace.resource_mode
+    In HA 2026: LovelaceData.resource_mode
+    In older HA: lovelace.mode or lovelace.resource_mode
     """
-    # Новый атрибут (HA 2026+)
+    # New attribute (HA 2026+)
     if hasattr(lovelace, "resource_mode"):
         return lovelace.resource_mode
-    # Старый атрибут
+    # Old attribute
     if hasattr(lovelace, "mode"):
         return lovelace.mode
     return "yaml"

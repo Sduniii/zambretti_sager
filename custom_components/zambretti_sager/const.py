@@ -63,7 +63,7 @@ ZAMBRETTI_MAPPING = {
     32: "stormy_much_rain",
 }
 
-# Пороги тренда давления по алгоритму Sager (hPa за ~3 ч)
+# Sager algorithm pressure trend thresholds (hPa per ~3 h)
 SAGER_TREND_RAPID = 1.4
 SAGER_TREND_SLOW = 0.7
 
@@ -80,7 +80,7 @@ SEA_LEVEL_SENSOR_HINTS = (
 
 
 def classify_pressure_trend(delta_hpa: float) -> str:
-    """Классифицировать тренд давления для алгоритма Sager."""
+    """Classify pressure trend for the Sager algorithm."""
     if delta_hpa >= SAGER_TREND_RAPID:
         return "rising_rapidly"
     if delta_hpa >= SAGER_TREND_SLOW:
@@ -93,7 +93,7 @@ def classify_pressure_trend(delta_hpa: float) -> str:
 
 
 def wind_degrees_to_compass(degrees: float | None) -> str | None:
-    """Преобразовать направление ветра в румб (N, NE, ...)."""
+    """Convert wind direction to compass point (N, NE, ...)."""
     if degrees is None:
         return None
     index = round(degrees / 45) % 8
@@ -105,7 +105,7 @@ def calculate_sager_forecast(
     delta_hpa: float,
     wind_degrees: float | None = None,
 ) -> str:
-    """Упрощённый прогноз Sager — возвращает translation key (без ветра)."""
+    """Simplified Sager forecast — returns a translation key (without wind)."""
     trend = classify_pressure_trend(delta_hpa)
 
     if pressure_hpa > 1020:

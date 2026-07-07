@@ -17,7 +17,7 @@ from .coordinator import ForecastData, ZambrettiSagerCoordinator
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Настройка сенсоров."""
+    """Set up sensors."""
     coordinator: ZambrettiSagerCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     async_add_entities([
@@ -31,7 +31,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 def _trend_label(delta: float) -> str:
-    """Текстовый тренд для атрибутов."""
+    """Text trend for attributes."""
     trend = classify_pressure_trend(delta)
     return {
         "rising_rapidly": "↑↑ Rising Fast",
@@ -43,7 +43,7 @@ def _trend_label(delta: float) -> str:
 
 
 class WeatherSensorBase(CoordinatorEntity, SensorEntity):
-    """Базовый класс сенсоров прогноза."""
+    """Base class for forecast sensors."""
 
     # Force HA to write a recorder entry every coordinator update cycle
     # (every 5 min) even when state hasn't changed. This gives the Lovelace
@@ -72,7 +72,7 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
 
     @staticmethod
     def _zambretti_index(p_now: float, delta: float) -> int:
-        """Вычислить индекс Замбретти (1–32)."""
+        """Calculate Zambretti index (1–32)."""
         if delta <= -1.6:
             z = round(127 - 0.12 * p_now)
         elif delta >= 1.6:
@@ -82,7 +82,7 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
         return max(1, min(z, 32))
 
     def _base_attrs(self, delta: float) -> dict:
-        """Общие атрибуты для всех сенсоров прогноза."""
+        """Common attributes for all forecast sensors."""
         d = self.data
         attrs: dict = {}
         if d and d.p_now is not None:
@@ -102,7 +102,7 @@ class WeatherSensorBase(CoordinatorEntity, SensorEntity):
             attrs["is_night"] = d.is_night
         return attrs
 class ZambrettiSensor(WeatherSensorBase):
-    """Текущий прогноз Замбретти на основе тренда за 3 часа."""
+    """Current Zambretti forecast based on 3-hour trend."""
 
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
@@ -134,7 +134,7 @@ class ZambrettiSensor(WeatherSensorBase):
 
 
 class SagerSensor(WeatherSensorBase):
-    """Прогноз Сейгера на основе давления, тренда и направления ветра."""
+    """Sager forecast based on pressure, trend, and wind direction."""
 
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
@@ -161,7 +161,7 @@ class SagerSensor(WeatherSensorBase):
 
 
 class ZambrettiForecast6h(WeatherSensorBase):
-    """Прогноз на 6 ч: тренд за 3 ч × 2."""
+    """6h forecast: 3h trend × 2."""
 
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
@@ -192,7 +192,7 @@ class ZambrettiForecast6h(WeatherSensorBase):
 
 
 class ZambrettiForecast12h(WeatherSensorBase):
-    """Прогноз на 12 ч: тренд за 6 ч × 2."""
+    """12h forecast: 6h trend × 2."""
 
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
@@ -226,7 +226,7 @@ class ZambrettiForecast12h(WeatherSensorBase):
 
 
 class ZambrettiForecast24h(WeatherSensorBase):
-    """Прогноз на 24 ч: тренд за 12 ч × 2."""
+    """24h forecast: 12h trend × 2."""
 
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
@@ -268,7 +268,7 @@ class ZambrettiForecast24h(WeatherSensorBase):
 
 
 class PrecipitationProbability(WeatherSensorBase):
-    """Вероятность осадков на основе давления, тренда и влажности."""
+    """Precipitation probability based on pressure, trend, and humidity."""
 
     def __init__(self, coordinator: ZambrettiSagerCoordinator) -> None:
         super().__init__(coordinator)
@@ -301,7 +301,7 @@ class PrecipitationProbability(WeatherSensorBase):
         elif delta > 1.6:      trend_modifier = -15
         else:                  trend_modifier = 0
 
-        # Влажность: высокая влажность увеличивает вероятность осадков
+        # Humidity: high humidity increases the probability of precipitation
         humidity_modifier = 0
         if d.humidity is not None:
             if d.humidity >= 90:    humidity_modifier = 15

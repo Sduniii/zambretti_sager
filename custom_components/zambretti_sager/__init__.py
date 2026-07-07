@@ -23,7 +23,7 @@ PLATFORMS: list[str] = ["sensor", "weather"]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
-# ── WebSocket: version endpoint (для проверки совпадения версий) ──────────
+# ── WebSocket: version endpoint (to check version matches) ──────────
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/version"})
 @websocket_api.async_response
@@ -32,17 +32,17 @@ async def _ws_get_version(
     connection: websocket_api.ActiveConnection,
     msg: dict,
 ) -> None:
-    """Возвращает версию интеграции на фронтенд."""
+    """Returns the integration version to the frontend."""
     connection.send_result(msg["id"], {"version": VERSION})
 
 
 # ── async_setup ───────────────────────────────────────────────────────────
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Вызывается один раз при загрузке домена.
+    """Called once when the domain is loaded.
 
-    Регистрирует WebSocket-команду и JS-карточку.
-    Должен быть здесь, а не в async_setup_entry.
+    Registers the WebSocket command and the JS card.
+    Must be here, not in async_setup_entry.
     """
     websocket_api.async_register_command(hass, _ws_get_version)
 
@@ -70,8 +70,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 # ── async_setup_entry ─────────────────────────────────────────────────────
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Настройка интеграции при добавлении через интерфейс."""
-    _LOGGER.info("Инициализация Zambretti & Sager для: %s", entry.title)
+    """Configure integration when added via UI."""
+    _LOGGER.info("Initializing Zambretti & Sager for: %s", entry.title)
 
     hass.data.setdefault(DOMAIN, {})
     coordinator = await async_create_coordinator(hass, entry)
@@ -83,13 +83,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Перезапуск при изменении опций."""
+    """Restart when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Выгрузка при удалении entry."""
-    # Остановить подписку на state change, чтобы избежать утечки
+    """Unload when entry is removed."""
+    # Stop pressure watcher to avoid memory leaks
     coordinator: Any = hass.data.get(DOMAIN, {}).get(entry.entry_id)
     if coordinator is not None:
         coordinator._stop_pressure_watcher()  # noqa: SLF001
