@@ -2,30 +2,30 @@
   "config": {
     "step": {
       "user": {
-        "title": "Konfigurera väderstation",
+        "title": "Inställning av väderstation",
         "description": "Välj sensorer för din prognosmodell.",
         "data": {
           "pressure_sensor": "Trycksensor",
           "wind_sensor": "Vindriktningssensor (valfritt)",
           "wind_speed_sensor": "Vindhastighetssensor (valfritt)",
           "temperature_sensor": "Temperatursensor (valfritt)",
-          "humidity_sensor": "Fuktighetssensor (valfritt)",
-          "use_sea_level_correction": "Aktivera korrigering till havsnivåtryck",
+          "humidity_sensor": "Luftfuktighetssensor (valfritt)",
+          "use_sea_level_correction": "Aktivera korrigering för havsnivåtryck",
           "location": "Plats"
         },
         "data_description": {
           "pressure_sensor": "Välj din barometriska trycksensor",
           "wind_sensor": "Valfritt: vindriktningssensor (i grader)",
-          "wind_speed_sensor": "Valfritt: separat vindhastighetssensor",
-          "temperature_sensor": "Valfritt: används för korrigering till havsnivå",
-          "humidity_sensor": "Valfritt: förbättrar nederbördsannolikheten",
-          "use_sea_level_correction": "Aktivera vid absolut trycksensor över havsnivå",
-          "location": "Klicka på kartan för att beräkna höjd"
+          "wind_speed_sensor": "Valfritt: dedikerad vindhastighetssensor",
+          "temperature_sensor": "Valfritt: används för korrigering av havsnivåtryck",
+          "humidity_sensor": "Valfritt: förbättrar noggrannheten för nederbördssannolikheten",
+          "use_sea_level_correction": "Aktivera om du använder en absolut trycksensor över havsnivån",
+          "location": "Klicka på kartan för att ange din plats för höjdsberäkning"
         }
       }
     },
     "error": {
-      "cannot_connect": "Anslutning misslyckades",
+      "cannot_connect": "Det gick inte att ansluta",
       "unknown": "Oväntat fel"
     },
     "abort": {
@@ -36,24 +36,24 @@
     "step": {
       "init": {
         "title": "Justera sensorer",
-        "description": "Uppdatera sensorer för Zambretti- och Sager-beräkningar.",
+        "description": "Uppdatera de sensorer som används för Zambretti- och Sager-beräkningar.",
         "data": {
           "pressure_sensor": "Trycksensor",
           "wind_sensor": "Vindriktningssensor (valfritt)",
           "wind_speed_sensor": "Vindhastighetssensor (valfritt)",
           "temperature_sensor": "Temperatursensor (valfritt)",
-          "humidity_sensor": "Fuktighetssensor (valfritt)",
-          "use_sea_level_correction": "Aktivera korrigering till havsnivåtryck",
+          "humidity_sensor": "Luftfuktighetssensor (valfritt)",
+          "use_sea_level_correction": "Aktivera korrigering för havsnivåtryck",
           "location": "Plats"
         },
         "data_description": {
           "pressure_sensor": "Välj din barometriska trycksensor",
           "wind_sensor": "Valfritt: vindriktningssensor (i grader)",
-          "wind_speed_sensor": "Valfritt: separat vindhastighetssensor",
-          "temperature_sensor": "Valfritt: används för korrigering till havsnivå",
-          "humidity_sensor": "Valfritt: förbättrar nederbördsannolikheten",
-          "use_sea_level_correction": "Aktivera vid absolut trycksensor över havsnivå",
-          "location": "Klicka på kartan för att beräkna höjd"
+          "wind_speed_sensor": "Valfritt: dedikerad vindhastighetssensor",
+          "temperature_sensor": "Valfritt: används för korrigering av havsnivåtryck",
+          "humidity_sensor": "Valfritt: förbättrar noggrannheten för nederbördssannolikheten",
+          "use_sea_level_correction": "Aktivera om du använder en absolut trycksensor över havsnivån",
+          "location": "Klicka på kartan för att ange din plats för höjdsberäkning"
         }
       }
     }
@@ -62,48 +62,48 @@
     "sensor": {
       "zambretti_forecast": {
         "state": {
-          "settled_fine": "Fint, stabilt",
+          "settled_fine": "Stabilt och fint",
           "fine_weather": "Fint väder",
-          "fine_becoming_less_settled": "Fint, mindre stabilt",
-          "fairly_fine_showery_later": "Ganska fint, skurar senare",
-          "showery_becoming_more_unsettled": "Skurar, försämras",
+          "fine_becoming_less_settled": "Fint, blir mindre stabilt",
+          "fairly_fine_showery_later": "Ganska fint, regnskurar senare",
+          "showery_becoming_more_unsettled": "Regnskurar, blir mer ostadigt",
           "unsettled_rain_later": "Ostadigt, regn senare",
-          "rain_at_times_worse_later": "Regn, sämre senare",
-          "rain_at_times_becoming_very_unsettled": "Regn, mycket ostadigt",
+          "rain_at_times_worse_later": "Regn ibland, sämre senare",
+          "rain_at_times_becoming_very_unsettled": "Regn ibland, blir mycket ostadigt",
           "very_unsettled_rain": "Mycket ostadigt, regn",
-          "fine_possibly_showers": "Fint, möjliga skurar",
-          "fairly_fine_showers_likely": "Ganska fint, skurar troliga",
-          "showery_bright_intervals": "Skurar, uppehåll",
-          "changeable_some_rain": "Ombytligt, lite regn",
-          "unsettled_rain_at_times": "Ostadigt, regn ibland",
-          "rain_at_frequent_intervals": "Frekvent regn",
+          "fine_possibly_showers": "Fint väder, eventuellt byar",
+          "fairly_fine_showers_likely": "Ganska fint väder, troligtvis byar",
+          "showery_bright_intervals": "Byigt, med solglimtar",
+          "changeable_some_rain": "Omväxlande, en del regn",
+          "unsettled_rain_at_times": "Omväxlande, regn ibland",
+          "rain_at_frequent_intervals": "Regn med täta intervall",
           "stormy_much_rain": "Stormigt, mycket regn",
-          "becoming_fine": "Förbättras",
-          "fairly_fine_improving": "Ganska fint, förbättras",
-          "fairly_fine_possibly_showers_early": "Ganska fint, tidiga skurar",
-          "showery_early_improving": "Tidiga skurar, förbättras",
-          "changeable_mending": "Ombytligt, förbättras",
-          "rather_unsettled_clearing_later": "Ganska ostadigt, klarnar senare",
-          "unsettled_probably_improving": "Ostadigt, troligen förbättring",
-          "unsettled_short_fine_intervals": "Ostadigt, korta uppehåll",
-          "very_unsettled_finer_at_times": "Mycket ostadigt, ibland bättre",
-          "stormy_possibly_improving": "Stormigt, möjlig förbättring",
+          "becoming_fine": "Blir fint väder",
+          "fairly_fine_improving": "Ganska fint väder, förbättras",
+          "fairly_fine_possibly_showers_early": "Ganska fint väder, eventuellt byar tidigt",
+          "showery_early_improving": "Regnskurar tidigt, förbättras",
+          "changeable_mending": "Omväxlande, klarnar upp",
+          "rather_unsettled_clearing_later": "Ganska ostadigt, klarnar upp senare",
+          "unsettled_probably_improving": "Ostadigt, förbättras troligen",
+          "unsettled_short_fine_intervals": "Ostadigt, korta uppklarningar",
+          "very_unsettled_finer_at_times": "Mycket ostadigt, uppklarnar ibland",
+          "stormy_possibly_improving": "Stormigt, förbättras eventuellt",
           "stable": "Stabilt"
         }
       },
       "sager_forecast": {
         "state": {
           "sager_fair_improving": "Fint väder, förbättras",
-          "sager_fair_tending_to_deteriorate": "Fint väder, tendens att försämras",
-          "sager_fair_no_change": "Fint väder, ingen viktig förändring",
-          "sager_unsettled_rain_likely": "Ostadigt, regn troligt",
-          "sager_unsettled_probably_improving": "Ostadigt, troligen förbättring",
-          "sager_unsettled_rain_at_times": "Ostadigt, regn ibland",
-          "sager_changeable_becoming_fairer": "Ombytligt, blir finare",
-          "sager_changeable_becoming_more_unsettled": "Ombytligt, mer ostadigt",
-          "sager_variable_slowly_improving": "Variabelt, långsam förbättring",
-          "sager_variable_slowly_deteriorating": "Variabelt, långsam försämring",
-          "sager_variable_some_change": "Variabelt, förändring väntas"
+          "sager_fair_tending_to_deteriorate": "Fint väder nu, tenderar att försämras",
+          "sager_fair_no_change": "Fint väder, inga större förändringar",
+          "sager_unsettled_rain_likely": "Omväxlande, regn troligt",
+          "sager_unsettled_probably_improving": "Omväxlande, förbättras troligen",
+          "sager_unsettled_rain_at_times": "Omväxlande, regn ibland",
+          "sager_changeable_becoming_fairer": "Omväxlande, blir finare",
+          "sager_changeable_becoming_more_unsettled": "Omväxlande, blir mer omväxlande",
+          "sager_variable_slowly_improving": "Omväxlande, förbättras långsamt",
+          "sager_variable_slowly_deteriorating": "Omväxlande, försämras långsamt",
+          "sager_variable_some_change": "Omväxlande, vissa förändringar förväntas"
         }
       }
     }

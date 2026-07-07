@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.70] — 2026-07-07
+
+### Changed
+- **Translations improved** — all 19 localizations (cs, da, de, es, fr, hu, it, ja, ko, nb, nl, pl, pt, ru, sv, tr, uk, zh-Hans, zh-Hant) fully retranslated from English using DeepL for higher quality and consistency.
+
+---
+
 ## [1.9.69] — 2026-07-06
 
 ### Fixed

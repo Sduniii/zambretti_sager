@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Időjárás-állomás beállítása",
-        "description": "Válassza ki az előrejelzési modell szenzorait.",
+        "description": "Válassza ki az előrejelzési modellhez szükséges érzékelőket.",
         "data": {
           "pressure_sensor": "Nyomásérzékelő",
           "wind_sensor": "Szélirány-érzékelő (opcionális)",
@@ -14,29 +14,29 @@
           "location": "Hely"
         },
         "data_description": {
-          "pressure_sensor": "Válassza ki a barometrikus nyomásérzékelőt",
+          "pressure_sensor": "Válassza ki a légnyomás-érzékelőjét",
           "wind_sensor": "Opcionális: szélirány-érzékelő (fokban)",
-          "wind_speed_sensor": "Opcionális: külön szélsebesség-érzékelő",
-          "temperature_sensor": "Opcionális: tengerszint feletti korrekcióhoz",
-          "humidity_sensor": "Opcionális: javítja a csapadék valószínűségét",
-          "use_sea_level_correction": "Engedélyezze abszolút nyomásérzékelő esetén tengerszint felett",
-          "location": "Kattintson a térképre a magasság számításához"
+          "wind_speed_sensor": "Opcionális: dedikált szélsebesség-érzékelő",
+          "temperature_sensor": "Opcionális: tengerszint feletti nyomáskorrekcióhoz használható",
+          "humidity_sensor": "Opcionális: javítja a csapadék valószínűségének pontosságát",
+          "use_sea_level_correction": "Engedélyezze, ha tengerszint feletti abszolút nyomásérzékelőt használ",
+          "location": "Kattintson a térképre a magasság kiszámításához szükséges helyszín beállításához"
         }
       }
     },
     "error": {
-      "cannot_connect": "Kapcsolódás sikertelen",
+      "cannot_connect": "A csatlakozás nem sikerült",
       "unknown": "Váratlan hiba"
     },
     "abort": {
-      "already_configured": "Ez az időjárás-állomás már be van állítva"
+      "already_configured": "Ez az időjárásállomás már be van állítva"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Szenzorok módosítása",
-        "description": "Frissítse a Zambretti és Sager számításokhoz használt szenzorokat.",
+        "title": "Érzékelők beállítása",
+        "description": "Frissítse a Zambretti- és Sager-számításokhoz használt érzékelőket.",
         "data": {
           "pressure_sensor": "Nyomásérzékelő",
           "wind_sensor": "Szélirány-érzékelő (opcionális)",
@@ -47,13 +47,13 @@
           "location": "Hely"
         },
         "data_description": {
-          "pressure_sensor": "Válassza ki a barometrikus nyomásérzékelőt",
+          "pressure_sensor": "Válassza ki a légnyomás-érzékelőjét",
           "wind_sensor": "Opcionális: szélirány-érzékelő (fokban)",
-          "wind_speed_sensor": "Opcionális: külön szélsebesség-érzékelő",
-          "temperature_sensor": "Opcionális: tengerszint feletti korrekcióhoz",
-          "humidity_sensor": "Opcionális: javítja a csapadék valószínűségét",
-          "use_sea_level_correction": "Engedélyezze abszolút nyomásérzékelő esetén tengerszint felett",
-          "location": "Kattintson a térképre a magasság számításához"
+          "wind_speed_sensor": "Opcionális: dedikált szélsebesség-érzékelő",
+          "temperature_sensor": "Opcionális: tengerszint feletti nyomáskorrekcióhoz használható",
+          "humidity_sensor": "Opcionális: javítja a csapadék valószínűségének pontosságát",
+          "use_sea_level_correction": "Engedélyezze, ha tengerszint feletti abszolút nyomásérzékelőt használ",
+          "location": "Kattintson a térképre a magasság kiszámításához szükséges helyszín beállításához"
         }
       }
     }
@@ -62,48 +62,48 @@
     "sensor": {
       "zambretti_forecast": {
         "state": {
-          "settled_fine": "Szép, stabil",
+          "settled_fine": "Stabil, szép idő",
           "fine_weather": "Szép idő",
-          "fine_becoming_less_settled": "Szép, kevésbé stabil",
-          "fairly_fine_showery_later": "Egész szép, később záporok",
-          "showery_becoming_more_unsettled": "Záporok, romlás",
+          "fine_becoming_less_settled": "Szép, de egyre kevésbé stabil",
+          "fairly_fine_showery_later": "Meglehetősen szép, később záporos",
+          "showery_becoming_more_unsettled": "Záporos, egyre változékonyabb",
           "unsettled_rain_later": "Változékony, később eső",
-          "rain_at_times_worse_later": "Eső, később romlik",
-          "rain_at_times_becoming_very_unsettled": "Eső, nagyon változékony",
+          "rain_at_times_worse_later": "Helyenként eső, később romlik",
+          "rain_at_times_becoming_very_unsettled": "Helyenként eső, egyre változékonyabb",
           "very_unsettled_rain": "Nagyon változékony, eső",
-          "fine_possibly_showers": "Szép, lehetséges záporok",
-          "fairly_fine_showers_likely": "Egész szép, záporok valószínűek",
-          "showery_bright_intervals": "Záporok, felhőszakadások",
-          "changeable_some_rain": "Változékony, kevés eső",
+          "fine_possibly_showers": "Szép, esetleg záporok",
+          "fairly_fine_showers_likely": "Meglehetősen szép, valószínűleg záporok",
+          "showery_bright_intervals": "Záporos, napos időszakokkal",
+          "changeable_some_rain": "Változékony, némi eső",
           "unsettled_rain_at_times": "Változékony, időnként eső",
-          "rain_at_frequent_intervals": "Gyakori eső",
+          "rain_at_frequent_intervals": "Gyakori esőzések",
           "stormy_much_rain": "Viharos, sok eső",
-          "becoming_fine": "Javul",
-          "fairly_fine_improving": "Egész szép, javul",
-          "fairly_fine_possibly_showers_early": "Egész szép, korai záporok",
-          "showery_early_improving": "Korai záporok, javul",
-          "changeable_mending": "Változékony, javul",
-          "rather_unsettled_clearing_later": "Inkább változékony, később derül",
-          "unsettled_probably_improving": "Változékony, valószínű javulás",
-          "unsettled_short_fine_intervals": "Változékony, rövid derülések",
-          "very_unsettled_finer_at_times": "Nagyon változékony, időnként jobb",
-          "stormy_possibly_improving": "Viharos, lehetséges javulás",
+          "becoming_fine": "Szép időre fordul",
+          "fairly_fine_improving": "Meglehetősen szép, javuló időjárás",
+          "fairly_fine_possibly_showers_early": "Meglehetősen szép, kora reggel esetleg záporok",
+          "showery_early_improving": "Reggel záporos, javuló időjárás",
+          "changeable_mending": "Változékony, javuló időjárás",
+          "rather_unsettled_clearing_later": "Meglehetősen változékony, később kitisztul",
+          "unsettled_probably_improving": "Változékony, valószínűleg javuló időjárás",
+          "unsettled_short_fine_intervals": "Változékony, rövid szép időszakokkal",
+          "very_unsettled_finer_at_times": "Nagyon változékony, időnként szebb idő",
+          "stormy_possibly_improving": "Viharos, esetleg javuló időjárás",
           "stable": "Stabil"
         }
       },
       "sager_forecast": {
         "state": {
-          "sager_fair_improving": "Szép idő, javul",
-          "sager_fair_tending_to_deteriorate": "Szép idő, romlásra hajlik",
+          "sager_fair_improving": "Szép idő, javuló",
+          "sager_fair_tending_to_deteriorate": "Jelenleg szép idő, romlásra hajlamos",
           "sager_fair_no_change": "Szép idő, nincs jelentős változás",
           "sager_unsettled_rain_likely": "Változékony, eső valószínű",
-          "sager_unsettled_probably_improving": "Változékony, valószínű javulás",
+          "sager_unsettled_probably_improving": "Változékony, valószínűleg javuló",
           "sager_unsettled_rain_at_times": "Változékony, időnként eső",
-          "sager_changeable_becoming_fairer": "Változékony, javul",
-          "sager_changeable_becoming_more_unsettled": "Változékony, változékonyabb",
-          "sager_variable_slowly_improving": "Változó, lassú javulás",
-          "sager_variable_slowly_deteriorating": "Változó, lassú romlás",
-          "sager_variable_some_change": "Változó, változás várható"
+          "sager_changeable_becoming_fairer": "Változékony, egyre szebb időre fordul",
+          "sager_changeable_becoming_more_unsettled": "Változékony, egyre változékonyabbá válik",
+          "sager_variable_slowly_improving": "Változékony, lassan javuló",
+          "sager_variable_slowly_deteriorating": "Változékony, lassan romló",
+          "sager_variable_some_change": "Változékony, némi változás várható"
         }
       }
     }
