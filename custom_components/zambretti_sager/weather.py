@@ -20,18 +20,30 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, VERSION, ZAMBRETTI_MAPPING
+from .const import DOMAIN, VERSION, ZAMBRETTI_MAPPING, calculate_sager_forecast
 from .coordinator import ForecastData, ZambrettiSagerCoordinator
 from .sensor import ZambrettiSensor
 
 _LOGGER = logging.getLogger(__name__)
 
 def zambretti_to_condition(z_str: str, is_night: bool) -> str:
-    """Map Zambretti string to HA weather condition."""
+    """Map Zambretti/Sager string to HA weather condition."""
     if not z_str:
         return ATTR_CONDITION_CLOUDY
         
     z_str = z_str.lower()
+    
+    # Sager mapping
+    if "sager_" in z_str:
+        if "rain_likely" in z_str or "rain_at_times" in z_str:
+            return ATTR_CONDITION_RAINY
+        if "fair_improving" in z_str or "fair_no_change" in z_str:
+            return ATTR_CONDITION_CLEAR_NIGHT if is_night else ATTR_CONDITION_SUNNY
+        if "fair" in z_str or "improving" in z_str or "fairer" in z_str:
+            return ATTR_CONDITION_PARTLYCLOUDY
+        return ATTR_CONDITION_CLOUDY
+
+    # Zambretti mapping
     if "storm" in z_str:
         return ATTR_CONDITION_POURING
     if "rain" in z_str or "showery" in z_str:
@@ -76,6 +88,39 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
     def data(self) -> ForecastData | None:
         return self.coordinator.data
 
+    def _calculate_precipitation(self, p_now: float, delta: float, humidity: float | None) -> tuple[int, float]:
+        """Estimate precipitation probability (%) and amount (mm)."""
+        if p_now < 1000:       base_prob = 90
+        elif p_now < 1005:     base_prob = 70
+        elif p_now < 1010:     base_prob = 50
+        elif p_now < 1015:     base_prob = 30
+        elif p_now < 1020:     base_prob = 15
+        else:                  base_prob = 5
+
+        if delta < -3.0:       trend_modifier = 30
+        elif delta < -1.6:     trend_modifier = 15
+        elif delta > 3.0:      trend_modifier = -30
+        elif delta > 1.6:      trend_modifier = -15
+        else:                  trend_modifier = 0
+
+        humidity_modifier = 0
+        if humidity is not None:
+            if humidity >= 90:    humidity_modifier = 15
+            elif humidity >= 80:  humidity_modifier = 10
+            elif humidity >= 70:  humidity_modifier = 5
+            elif humidity <= 30:  humidity_modifier = -15
+            elif humidity <= 40:  humidity_modifier = -10
+
+        prob = max(0, min(100, base_prob + trend_modifier + humidity_modifier))
+        
+        amount = 0.0
+        if prob >= 90: amount = 5.0
+        elif prob >= 70: amount = 2.5
+        elif prob >= 50: amount = 1.0
+        elif prob >= 30: amount = 0.2
+            
+        return prob, amount
+
     @property
     def condition(self) -> str | None:
         d = self.data
@@ -84,8 +129,12 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
             
         p_3h = d.p_3h if d.p_3h is not None else d.p_now
         delta = d.p_now - p_3h
-        z_index = ZambrettiSensor._zambretti_index(d.p_now, delta)
-        z_str = ZAMBRETTI_MAPPING.get(z_index, "stable")
+        
+        if d.wind_degrees is not None:
+            z_str = calculate_sager_forecast(d.p_now, delta, d.wind_degrees)
+        else:
+            z_index = ZambrettiSensor._zambretti_index(d.p_now, delta)
+            z_str = ZAMBRETTI_MAPPING.get(z_index, "stable")
         
         return zambretti_to_condition(z_str, d.is_night)
 
@@ -135,9 +184,16 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
 
         delta = (d.p_now - p_ref) / hours_ref * target_hours if hours_ref else 0
         predicted_p = d.p_now + delta
-        z_index = ZambrettiSensor._zambretti_index(predicted_p, delta)
-        z_str = ZAMBRETTI_MAPPING.get(z_index, "stable")
+        
+        if d.wind_degrees is not None:
+            z_str = calculate_sager_forecast(predicted_p, delta, d.wind_degrees)
+        else:
+            z_index = ZambrettiSensor._zambretti_index(predicted_p, delta)
+            z_str = ZAMBRETTI_MAPPING.get(z_index, "stable")
+            
         condition = zambretti_to_condition(z_str, False)
+        
+        prob, amount = self._calculate_precipitation(predicted_p, delta, d.humidity)
         
         dt = dt_util.utcnow() + datetime.timedelta(hours=target_hours)
         return {
@@ -148,6 +204,8 @@ class ZambrettiWeatherEntity(CoordinatorEntity, WeatherEntity):
             "native_wind_speed": self.native_wind_speed,
             "wind_bearing": self.wind_bearing,
             "humidity": self.humidity,
+            "precipitation_probability": prob,
+            "native_precipitation": amount,
         }
 
     async def async_forecast_daily(self) -> list[Forecast] | None:
