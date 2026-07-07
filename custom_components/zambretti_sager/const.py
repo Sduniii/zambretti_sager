@@ -2,7 +2,7 @@ from typing import Final
 
 DOMAIN = "zambretti_sager"
 
-VERSION = "1.9.69"
+VERSION = "2026.7.1"
 
 # Frontend
 URL_BASE: Final[str] = "/zambretti_sager_card"
