@@ -268,7 +268,7 @@ function getTheme(c){ return CONDITION_THEME[c] || DEFAULT_THEME; }
 
 // Dynamischer Alpha-Helper für die Standardfarben
 function applyAlpha(bgString, alphaPct) {
-  if (alphaPct === undefined || alphaPct >= 100) return bgString;
+  if (alphaPct === undefined || alphaPct >= 100 || typeof alphaPct !== 'number' || isNaN(alphaPct)) return bgString;
   const a = Math.max(0, Math.min(100, alphaPct));
   const hex = Math.round((a / 100) * 255).toString(16).padStart(2, "0").toUpperCase();
   // Ersetzt jeden 6-stelligen Hexcode im String durch Hex + Alpha
@@ -551,12 +551,13 @@ function historyChart(points, labels, compact) {
         <rect x="${PAD.left}" y="${PAD.top}" width="${cW}" height="${cH}"/>
       </clipPath>
     </defs>
-
+    <!-- Horizontal grid lines (pressure ticks) -->
     ${pTicks.map(v => {
       const y = yOfP(v).toFixed(1);
       return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}"
         stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4 5"/>`;
     }).join("")}
+    <!-- Vertical grid lines (time ticks) -->
     ${xLabels.map(({t}) => {
       const x = xOf(t).toFixed(1);
       return `<line x1="${x}" y1="${PAD.top}" x2="${x}" y2="${PAD.top+cH}"
@@ -564,17 +565,22 @@ function historyChart(points, labels, compact) {
     }).join("")}
 
     <g clip-path="url(#${gid}_clip)">
+      <!-- Precip area fill -->
       ${prAreaPath ? `<path d="${prAreaPath}" fill="url(#${gid}_pr)"/>` : ""}
+      <!-- Precip line: dashed white, visible on any background -->
       ${prPath ? `<path d="${prPath}" fill="none" stroke="rgba(255,255,255,0.72)"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         stroke-dasharray="5 4"/>` : ""}
+      <!-- Pressure area fill -->
       ${pAreaPath ? `<path d="${pAreaPath}" fill="url(#${gid}_p)"/>` : ""}
+      <!-- Pressure line: solid, on top -->
       ${pPath ? `<path d="${pPath}" fill="none" stroke="#90CAF9"
         stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
       ${lastPAnnot}
       ${lastPrAnnot}
     </g>
 
+    <!-- Left Y-axis labels (pressure) -->
     ${pTicks.map(v => {
       const y = yOfP(v);
       if (y < PAD.top - 4 || y > PAD.top + cH + 4) return "";
@@ -583,6 +589,7 @@ function historyChart(points, labels, compact) {
         font-size="${FONT}" font-family="${FONT_FAMILY}">${v}</text>`;
     }).join("")}
 
+    <!-- Right Y-axis labels (precip %) — positioned inside right edge -->
     ${prTicks.map(v => {
       const y = yOfPr(v);
       if (y < PAD.top - 4 || y > PAD.top + cH + 4) return "";
@@ -591,6 +598,7 @@ function historyChart(points, labels, compact) {
         font-size="${FONT - 2}" font-family="${FONT_FAMILY}">${v}%</text>`;
     }).join("")}
 
+    <!-- X-axis time labels -->
     ${xLabels.map(({t, label}) => {
       const x = xOf(t);
       if (x < PAD.left + 6 || x > PAD.left + cW - 6) return "";
@@ -599,11 +607,13 @@ function historyChart(points, labels, compact) {
         font-family="${FONT_FAMILY}">${label}</text>`;
     }).join("")}
 
+    <!-- Axis borders -->
     <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}"
       stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
     <line x1="${PAD.left}" y1="${PAD.top+cH}" x2="${PAD.left+cW}" y2="${PAD.top+cH}"
       stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
 
+    <!-- Legend -->
     <circle cx="${PAD.left+7}" cy="${PAD.top-7}" r="4" fill="#90CAF9"/>
     <text x="${PAD.left+15}" y="${PAD.top-4}" fill="rgba(255,255,255,0.70)"
       font-size="${FONT}" font-family="${FONT_FAMILY}" dominant-baseline="middle">hPa</text>
