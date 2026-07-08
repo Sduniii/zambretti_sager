@@ -266,6 +266,15 @@ const CONDITION_THEME = {
 const DEFAULT_THEME = {bg:"linear-gradient(135deg,#1565C0 0%,#1976D2 100%)"};
 function getTheme(c){ return CONDITION_THEME[c] || DEFAULT_THEME; }
 
+// Dynamischer Alpha-Helper für die Standardfarben
+function applyAlpha(bgString, alphaPct) {
+  if (alphaPct === undefined || alphaPct >= 100) return bgString;
+  const a = Math.max(0, Math.min(100, alphaPct));
+  const hex = Math.round((a / 100) * 255).toString(16).padStart(2, "0").toUpperCase();
+  // Ersetzt jeden 6-stelligen Hexcode im String durch Hex + Alpha
+  return bgString.replace(/#([0-9a-fA-F]{6})(?![0-9a-fA-F])/gi, `#$1${hex}`);
+}
+
 // ── Short label helper ────────────────────────────────────────────────────
 function shortLabel(key, labels) {
   const full = labels[key] || key || "—";
@@ -395,12 +404,12 @@ function forecastTimeline(steps, labels, compact) {
 // ── History chart SVG ────────────────────────────────────────────────────
 /**
  * Render a dual-axis SVG line chart:
- *   - blue line  = pressure (hPa), left axis
- *   - teal line  = precipitation probability (%), right axis
- *   - grey bars  = Zambretti condition label (bottom strip)
+ * - blue line  = pressure (hPa), left axis
+ * - teal line  = precipitation probability (%), right axis
+ * - grey bars  = Zambretti condition label (bottom strip)
  *
  * @param {Array<{t:Date, p:number|null, precip:number|null, label:string|null}>} points
- *   Sorted oldest→newest, max 288 points (24h × 5-min intervals).
+ * Sorted oldest→newest, max 288 points (24h × 5-min intervals).
  * @param {object} labels  i18n label map for Zambretti keys
  * @param {boolean} compact  use compact sizing
  * @returns {string}  SVG markup string
@@ -543,13 +552,11 @@ function historyChart(points, labels, compact) {
       </clipPath>
     </defs>
 
-    <!-- Horizontal grid lines (pressure ticks) -->
     ${pTicks.map(v => {
       const y = yOfP(v).toFixed(1);
       return `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cW}" y2="${y}"
         stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4 5"/>`;
     }).join("")}
-    <!-- Vertical grid lines (time ticks) -->
     ${xLabels.map(({t}) => {
       const x = xOf(t).toFixed(1);
       return `<line x1="${x}" y1="${PAD.top}" x2="${x}" y2="${PAD.top+cH}"
@@ -557,22 +564,17 @@ function historyChart(points, labels, compact) {
     }).join("")}
 
     <g clip-path="url(#${gid}_clip)">
-      <!-- Precip area fill -->
       ${prAreaPath ? `<path d="${prAreaPath}" fill="url(#${gid}_pr)"/>` : ""}
-      <!-- Precip line: dashed white, visible on any background -->
       ${prPath ? `<path d="${prPath}" fill="none" stroke="rgba(255,255,255,0.72)"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         stroke-dasharray="5 4"/>` : ""}
-      <!-- Pressure area fill -->
       ${pAreaPath ? `<path d="${pAreaPath}" fill="url(#${gid}_p)"/>` : ""}
-      <!-- Pressure line: solid, on top -->
       ${pPath ? `<path d="${pPath}" fill="none" stroke="#90CAF9"
         stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
       ${lastPAnnot}
       ${lastPrAnnot}
     </g>
 
-    <!-- Left Y-axis labels (pressure) -->
     ${pTicks.map(v => {
       const y = yOfP(v);
       if (y < PAD.top - 4 || y > PAD.top + cH + 4) return "";
@@ -581,7 +583,6 @@ function historyChart(points, labels, compact) {
         font-size="${FONT}" font-family="${FONT_FAMILY}">${v}</text>`;
     }).join("")}
 
-    <!-- Right Y-axis labels (precip %) — positioned inside right edge -->
     ${prTicks.map(v => {
       const y = yOfPr(v);
       if (y < PAD.top - 4 || y > PAD.top + cH + 4) return "";
@@ -590,7 +591,6 @@ function historyChart(points, labels, compact) {
         font-size="${FONT - 2}" font-family="${FONT_FAMILY}">${v}%</text>`;
     }).join("")}
 
-    <!-- X-axis time labels -->
     ${xLabels.map(({t, label}) => {
       const x = xOf(t);
       if (x < PAD.left + 6 || x > PAD.left + cW - 6) return "";
@@ -599,13 +599,11 @@ function historyChart(points, labels, compact) {
         font-family="${FONT_FAMILY}">${label}</text>`;
     }).join("")}
 
-    <!-- Axis borders -->
     <line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${PAD.top+cH}"
       stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
     <line x1="${PAD.left}" y1="${PAD.top+cH}" x2="${PAD.left+cW}" y2="${PAD.top+cH}"
       stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
 
-    <!-- Legend -->
     <circle cx="${PAD.left+7}" cy="${PAD.top-7}" r="4" fill="#90CAF9"/>
     <text x="${PAD.left+15}" y="${PAD.top-4}" fill="rgba(255,255,255,0.70)"
       font-size="${FONT}" font-family="${FONT_FAMILY}" dominant-baseline="middle">hPa</text>
@@ -644,6 +642,7 @@ class ZambrettiWeatherCard extends HTMLElement {
       wind_unit:    "m/s",
       compact:      false,
       auto_theme:   true,
+      theme_alpha:  100,
       custom_bg:    "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)",
     };
   }
@@ -675,6 +674,7 @@ class ZambrettiWeatherCard extends HTMLElement {
       show_precip:    true,
       show_forecasts: true,
       auto_theme:     true,
+      theme_alpha:    config.theme_alpha ?? 100,
       custom_bg:      "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)",
       ...config,
     };
@@ -1075,7 +1075,10 @@ class ZambrettiWeatherCard extends HTMLElement {
 
     // Theme
     const autoTheme = cfg.auto_theme !== false;
-    const theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
+    let theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
+    
+    // Alpha für Standardfarben dynamisch anwenden
+    theme = { bg: applyAlpha(theme.bg, cfg.theme_alpha) };
 
     const icon   = WEATHER_ICONS[iconKey] || WEATHER_ICONS.partlycloudy;
     const zLabel = L[zState] || zState || "—";
@@ -1169,7 +1172,9 @@ class ZambrettiWeatherCard extends HTMLElement {
 
     // If icon or theme changed — full rebuild (rare: weather condition change)
     const autoTheme = cfg.auto_theme !== false;
-    const theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
+    let theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
+    theme = { bg: applyAlpha(theme.bg, cfg.theme_alpha) };
+    
     if (iconKey !== this._lastIconKey || theme.bg !== this._lastThemeBg) {
       this._rendered = false;
       this._render();
@@ -1474,6 +1479,7 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
     const t = getEditorStrings(lang, hLang);
 
     const autoThemeOn  = c.auto_theme !== false;
+    const themeAlpha   = c.theme_alpha ?? 100;
     const showWindOn   = c.show_wind !== false;
     const customBg     = c.custom_bg || "linear-gradient(135deg,#1565C0 0%,#1976D2 100%)";
     const isSolidColor = /^#[0-9a-fA-F]{3,8}$/.test(customBg.trim());
@@ -1547,6 +1553,16 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
       </div>` : ""}
 
       ${this._toggle("sw-auto-theme", t.autoTheme, t.autoThemeH, autoThemeOn)}
+      ${autoThemeOn ? `
+      <div class="custom-bg-row">
+        <div class="row-label">Transparenz der Standardfarben (Alpha)</div>
+        <div class="row-hint">Passt die Deckkraft des Hintergrunds an (0-100%)</div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+          <input type="range" id="theme-alpha-slider" min="0" max="100" value="${themeAlpha}" style="flex:1; cursor:pointer;">
+          <span id="theme-alpha-lbl" style="font-size:0.85rem; font-family:monospace; width:40px; text-align:right;">${themeAlpha}%</span>
+        </div>
+      </div>` : ""}
+      
       ${!autoThemeOn ? `
       <div class="custom-bg-row">
         <div class="row-label">${t.customBg}</div>
@@ -1561,33 +1577,49 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
             placeholder="linear-gradient(...) or #hex" spellcheck="false">
         </div>
       </div>` : ""}
+      
       ${this._toggle("sw-sager",     t.showSager,     t.showSagerH,    c.show_sager     !== false)}
       ${this._toggle("sw-precip",    t.showPrecip,    t.showPrecipH,   c.show_precip    !== false)}
       ${this._toggle("sw-forecasts", t.showForecasts, t.showForecastH, c.show_forecasts !== false)}
       ${this._toggle("sw-trend",     t.showTrend    || "Show forecast trend timeline", t.showTrendH    || "Horizontal strip of past Zambretti states with icons and times", !!c.show_trend)}
-      ${this._toggle("sw-history",   t.showHistory  || "Show 24h history chart",      t.showHistoryH  || "Pressure & precipitation chart for the last 24 hours",            !!c.show_history)}
+      ${this._toggle("sw-history",   t.showHistory  || "Show 24h history chart",       t.showHistoryH  || "Pressure & precipitation chart for the last 24 hours",            !!c.show_history)}
     `;
 
     // Event listeners
     this.shadowRoot.querySelector("#sel-lang").addEventListener("change", e => {
       this._fire({...this._config, language: e.target.value});
     });
+    
     const windUnitSel = this.shadowRoot.querySelector("#sel-wind-unit");
     if (windUnitSel) {
       windUnitSel.addEventListener("change", e => {
         this._fire({...this._config, wind_unit: e.target.value});
       });
     }
+    
     this._setupWindEntityPicker();
+    
     this.shadowRoot.querySelectorAll("ha-switch[data-key]").forEach(el => {
       el.addEventListener("change", () => {
         this._fire({...this._config, [el.dataset.key]: el.checked});
       });
     });
 
+    const alphaSlider = this.shadowRoot.querySelector("#theme-alpha-slider");
+    const alphaLbl    = this.shadowRoot.querySelector("#theme-alpha-lbl");
+    if (alphaSlider) {
+      alphaSlider.addEventListener("input", e => {
+        if (alphaLbl) alphaLbl.textContent = `${e.target.value}%`;
+      });
+      alphaSlider.addEventListener("change", e => {
+        this._fire({...this._config, theme_alpha: parseInt(e.target.value, 10)});
+      });
+    }
+
     const bgText    = this.shadowRoot.querySelector("#bg-text");
     const bgPicker  = this.shadowRoot.querySelector("#bg-color-picker");
     const bgPreview = this.shadowRoot.querySelector("#bg-preview");
+    
     if (bgText) {
       bgText.addEventListener("change", e => {
         const val = e.target.value.trim();
@@ -1595,6 +1627,7 @@ class ZambrettiWeatherCardEditor extends HTMLElement {
         this._fire({...this._config, custom_bg: val});
       });
     }
+    
     if (bgPicker) {
       bgPicker.addEventListener("input", e => {
         const val = e.target.value;
