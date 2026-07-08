@@ -1088,7 +1088,7 @@ class ZambrettiWeatherCard extends HTMLElement {
     let theme = autoTheme ? getTheme(condThemeKey) : {bg: cfg.custom_bg || DEFAULT_THEME.bg};
     
     // Alpha für Standardfarben dynamisch anwenden
-    theme = { bg: applyAlpha(theme.bg, cfg.theme_alpha) };
+    theme = { bg: autoTheme ? applyAlpha(theme.bg, cfg.theme_alpha) : theme.bg };
 
     const icon   = WEATHER_ICONS[iconKey] || WEATHER_ICONS.partlycloudy;
     const zLabel = L[zState] || zState || "—";
