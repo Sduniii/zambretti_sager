@@ -253,16 +253,15 @@ function getWeatherIconKey(zambrettiState, isNight) {
 
 // ── Themes ────────────────────────────────────────────────────────────────
 const CONDITION_THEME = {
-      sunny:             "linear-gradient(135deg,#FF8C00 0%,#FFA500 40%,#FFD700 100%)",
-      night_clear:       "linear-gradient(135deg,#070B14 0%,#0F172A 50%,#1E293B 100%)",
-      partlycloudy:      "linear-gradient(135deg, #FF8C00 0%, #BBDEFB 50%, #FFFFFF 100%)",
-      cloudy:            "linear-gradient(135deg,#606C76 0%,#7E8A95 50%,#A2AEB8 100%)",
-      rainy:             "linear-gradient(135deg,#425363 0%,#54677A 50%,#70879C 100%)",
-      pouring:           "linear-gradient(135deg,#1C242D 0%,#2B3745 50%,#3F5063 100%)",
-      "lightning-rainy": "linear-gradient(135deg,#23153A 0%,#43286B 50%,#6943A3 100%)",
-      snowy:             "linear-gradient(135deg,#B8C6D4 0%,#DDE5ED 50%,#F4F7FA 100%)",
-      windy:             "linear-gradient(135deg,#5F9EA0 0%,#87B6B8 50%,#B4D3D4 100%)",
-      DEFAULT_THEME:     "linear-gradient(135deg,#2196F3 0%,#1976D2 100%)"
+      sunny:             {bg: "linear-gradient(135deg,#FF8C00 0%,#FFA500 40%,#FFD700 100%)"},
+      night_clear:       {bg: "linear-gradient(135deg,#070B14 0%,#0F172A 50%,#1E293B 100%)"},
+      partlycloudy:      {bg: "linear-gradient(135deg, #FF8C00 0%, #BBDEFB 50%, #FFFFFF 100%)"},
+      cloudy:            {bg: "linear-gradient(135deg,#606C76 0%,#7E8A95 50%,#A2AEB8 100%)"},
+      rainy:             {bg: "linear-gradient(135deg,#425363 0%,#54677A 50%,#70879C 100%)"},
+      pouring:           {bg: "linear-gradient(135deg,#1C242D 0%,#2B3745 50%,#3F5063 100%)"},
+      "lightning-rainy": {bg: "linear-gradient(135deg,#23153A 0%,#43286B 50%,#6943A3 100%)"},
+      snowy:             {bg: "linear-gradient(135deg,#B8C6D4 0%,#DDE5ED 50%,#F4F7FA 100%)"},
+      windy:             {bg: "linear-gradient(135deg,#5F9EA0 0%,#87B6B8 50%,#B4D3D4 100%)"}
     };
 const DEFAULT_THEME = {bg:"linear-gradient(135deg,#1565C0 0%,#1976D2 100%)"};
 function getTheme(c){ return CONDITION_THEME[c] || DEFAULT_THEME; }
